@@ -18,7 +18,6 @@ public class OsUtils {
         SELINUX_CONTEXT = context;
     }
 
-
     public static int getUid() {
         return UID;
     }
@@ -31,4 +30,3 @@ public class OsUtils {
         return SELINUX_CONTEXT;
     }
 }
-

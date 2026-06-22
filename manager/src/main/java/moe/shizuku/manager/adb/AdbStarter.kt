@@ -1,25 +1,23 @@
 package moe.shizuku.manager.adb
 
 import android.Manifest.permission.WRITE_SECURE_SETTINGS
-import android.content.pm.PackageManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.provider.Settings
 import android.widget.Toast
-import java.io.EOFException
-import java.net.SocketException
-import java.net.SocketTimeoutException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
-import moe.shizuku.manager.adb.AdbClient
-import moe.shizuku.manager.adb.AdbKey
-import moe.shizuku.manager.adb.PreferenceAdbKeyStore
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.ShizukuStateMachine
+import java.io.EOFException
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import javax.net.ssl.SSLProtocolException
 
 object AdbStarter {
     suspend fun startAdb(context: Context, port: Int, log: ((String) -> Unit)? = null) {
@@ -30,12 +28,15 @@ object AdbStarter {
         try {
             ShizukuStateMachine.set(ShizukuStateMachine.State.STARTING)
             log?.invoke("Starting with wireless adb...\n")
-        
+
             withContext(Dispatchers.IO) {
                 val key = runCatching { AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku") }
                     .getOrElse {
-                        if (it is CancellationException) throw it
-                        else throw AdbKeyException(it)
+                        if (it is CancellationException) {
+                            throw it
+                        } else {
+                            throw AdbKeyException(it)
+                        }
                     }
 
                 var activePort = port
@@ -56,7 +57,7 @@ object AdbStarter {
                         }.onFailure { if (it !is EOFException && it !is SocketException) throw it } // Expected when ADB restarts in TCP mode
                     }
                 }
-        
+
                 log?.invoke("Connecting on port $activePort...")
 
                 AdbClient("127.0.0.1", activePort, key).use { client ->
@@ -65,9 +66,15 @@ object AdbStarter {
                     client.runCommand("shell:${Starter.internalCommand}")
                 }
             }
+        } catch (e: SSLProtocolException) {
+            if (e.message?.contains("CERTIFICATE_UNKNOWN", ignoreCase = true) == true) {
+                throw AdbPairRequiredException(e)
+            }
+            throw e
         } finally {
-            if (context.checkSelfPermission(WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED)
+            if (context.checkSelfPermission(WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED) {
                 Settings.Global.putInt(context.contentResolver, "adb_wifi_enabled", 0)
+            }
         }
     }
 
@@ -78,7 +85,7 @@ object AdbStarter {
                 Settings.Global.putInt(cr, Settings.Global.ADB_ENABLED, 1)
                 Settings.Global.putLong(cr, "adb_allowed_connection_time", 0L)
             }
-        
+
             val adbEnabled = Settings.Global.getInt(cr, Settings.Global.ADB_ENABLED, 0)
             if (adbEnabled == 0) throw IllegalStateException("ADB is not enabled")
 
@@ -98,7 +105,7 @@ object AdbStarter {
                         is AdbKeyException -> context.getString(R.string.adb_error_key_store)
                         else -> it.message
                     }
-                    Toast.makeText(context, context.getString(R.string.adb_error_stop_tcp) + ". ${errorMsg}", Toast.LENGTH_LONG)
+                    Toast.makeText(context, context.getString(R.string.adb_error_stop_tcp) + ". $errorMsg", Toast.LENGTH_LONG)
                         .show()
                 }
             }
@@ -118,7 +125,9 @@ object AdbStarter {
                     attempt == maxAttempts ||
                     e is CancellationException ||
                     e is SocketTimeoutException
-                ) throw e
+                ) {
+                    throw e
+                }
                 delayTime += 1000
             }
         }

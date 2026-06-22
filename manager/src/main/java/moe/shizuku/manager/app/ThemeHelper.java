@@ -1,12 +1,9 @@
 package moe.shizuku.manager.app;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.os.Build;
 import android.util.TypedValue;
-import android.view.View;
 import androidx.annotation.StyleRes;
-import androidx.core.graphics.ColorUtils;
 import com.google.android.material.snackbar.Snackbar;
 import moe.shizuku.manager.R;
 import moe.shizuku.manager.ShizukuSettings;
@@ -19,7 +16,8 @@ public class ThemeHelper {
     private static final String THEME_BLACK = "BLACK";
 
     public static boolean isBlackNightTheme(Context context) {
-        return ShizukuSettings.getPreferences().getBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, EnvironmentUtils.isWatch());
+        return ShizukuSettings.getPreferences()
+                .getBoolean(ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME, EnvironmentUtils.isWatch());
     }
 
     public static boolean isUsingSystemColor() {
@@ -29,8 +27,7 @@ public class ThemeHelper {
 
     public static String getTheme(Context context) {
         if (isBlackNightTheme(context)
-                && ResourceUtils.isNightMode(context.getResources().getConfiguration()))
-            return THEME_BLACK;
+                && ResourceUtils.isNightMode(context.getResources().getConfiguration())) return THEME_BLACK;
 
         return ShizukuSettings.getPreferences().getString(ShizukuSettings.Keys.KEY_LIGHT_THEME, THEME_DEFAULT);
     }
@@ -48,8 +45,8 @@ public class ThemeHelper {
 
     public static void applySnackbarTheme(Context context, Snackbar snackbar) {
         snackbar.setBackgroundTint(resolveColor(context, R.attr.colorPrimaryContainer))
-            .setTextColor(resolveColor(context, R.attr.colorOnSurface))
-            .setActionTextColor(resolveColor(context, R.attr.colorPrimary));
+                .setTextColor(resolveColor(context, R.attr.colorOnSurface))
+                .setActionTextColor(resolveColor(context, R.attr.colorPrimary));
     }
 
     private static int resolveColor(Context context, int color) {

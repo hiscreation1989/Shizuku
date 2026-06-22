@@ -1,9 +1,7 @@
 package rikka.shizuku.server;
 
 import androidx.annotation.NonNull;
-
 import com.google.gson.annotations.SerializedName;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,8 +43,7 @@ public class ShizukuConfig {
         }
     }
 
-    public ShizukuConfig() {
-    }
+    public ShizukuConfig() {}
 
     public ShizukuConfig(@NonNull List<PackageEntry> packages) {
         this.version = LATEST_VERSION;

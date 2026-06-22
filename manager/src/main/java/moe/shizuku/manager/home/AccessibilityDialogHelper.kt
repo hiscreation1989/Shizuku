@@ -12,13 +12,12 @@ import android.text.style.TypefaceSpan
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import moe.shizuku.manager.R
 import moe.shizuku.manager.adb.AdbPairingAccessibilityService
-import moe.shizuku.manager.utils.SettingsHelper
 import moe.shizuku.manager.utils.SettingsPage
 
 fun Context.showAccessibilityDialog() {
     val hasWriteSecureSettings = (checkSelfPermission(WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED)
 
-    val installer = packageManager.getInstallerPackageName(packageName)
+    val installer = packageManager.getInstallerPackageNameCompat(packageName)
     val isInstalledByPlayOrAdb = (installer == "com.android.vending") || (installer == null)
     val hasAccessRestrictedSettings = isInstalledByPlayOrAdb || Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 
@@ -32,6 +31,13 @@ fun Context.showAccessibilityDialog() {
     } else {
         showEnableDialog()
     }
+}
+
+@Suppress("DEPRECATION")
+private fun PackageManager.getInstallerPackageNameCompat(packageName: String): String? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+    runCatching { getInstallSourceInfo(packageName).installingPackageName }.getOrNull()
+} else {
+    getInstallerPackageName(packageName)
 }
 
 private fun Context.showPermissionDialog() {

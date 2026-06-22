@@ -8,14 +8,12 @@ import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
 import android.view.View;
-
 import androidx.annotation.ArrayRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.StyleableRes;
 import androidx.core.content.res.TypedArrayUtils;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceViewHolder;
-
 import moe.shizuku.manager.R;
 import rikka.preference.simplemenu.SimpleMenuPopupWindow;
 
@@ -25,7 +23,6 @@ import rikka.preference.simplemenu.SimpleMenuPopupWindow;
  *
  * @author Haruue Icymoon haruue@caoyue.com.cn
  */
-
 @SuppressLint("RestrictedApi")
 public class IntegerSimpleMenuPreference extends Preference {
 
@@ -43,40 +40,41 @@ public class IntegerSimpleMenuPreference extends Preference {
     public IntegerSimpleMenuPreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
 
-        TypedArray a = context.obtainStyledAttributes(
-                attrs, R.styleable.ListPreference, defStyleAttr, defStyleRes);
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.ListPreference, defStyleAttr, defStyleRes);
 
-        mEntries = TypedArrayUtils.getTextArray(a, R.styleable.ListPreference_entries,
-                R.styleable.ListPreference_android_entries);
+        mEntries = TypedArrayUtils.getTextArray(
+                a, R.styleable.ListPreference_entries, R.styleable.ListPreference_android_entries);
 
-        mEntryValues = getIntArray(a, R.styleable.ListPreference_entryValues,
-                R.styleable.ListPreference_android_entryValues);
+        mEntryValues =
+                getIntArray(a, R.styleable.ListPreference_entryValues, R.styleable.ListPreference_android_entryValues);
 
         a.recycle();
 
         /* Retrieve the Preference summary attribute since it's private
          * in the Preference class.
          */
-        a = context.obtainStyledAttributes(attrs,
-                R.styleable.Preference, defStyleAttr, defStyleRes);
+        a = context.obtainStyledAttributes(attrs, R.styleable.Preference, defStyleAttr, defStyleRes);
 
-        mSummary = TypedArrayUtils.getString(a, R.styleable.Preference_summary,
-                R.styleable.Preference_android_summary);
+        mSummary = TypedArrayUtils.getString(a, R.styleable.Preference_summary, R.styleable.Preference_android_summary);
 
         a.recycle();
 
-        a = context.obtainStyledAttributes(
-                attrs, R.styleable.SimpleMenuPreference, defStyleAttr, defStyleRes);
+        a = context.obtainStyledAttributes(attrs, R.styleable.SimpleMenuPreference, defStyleAttr, defStyleRes);
 
-        int popupStyle = a.getResourceId(R.styleable.SimpleMenuPreference_android_popupMenuStyle, R.style.Widget_Preference_SimpleMenuPreference_PopupMenu);
-        int popupTheme = a.getResourceId(R.styleable.SimpleMenuPreference_android_popupTheme,R.style.ThemeOverlay_Preference_SimpleMenuPreference_PopupMenu);
+        int popupStyle = a.getResourceId(
+                R.styleable.SimpleMenuPreference_android_popupMenuStyle,
+                R.style.Widget_Preference_SimpleMenuPreference_PopupMenu);
+        int popupTheme = a.getResourceId(
+                R.styleable.SimpleMenuPreference_android_popupTheme,
+                R.style.ThemeOverlay_Preference_SimpleMenuPreference_PopupMenu);
         Context popupContext;
         if (popupTheme != 0) {
             popupContext = new ContextThemeWrapper(context, popupTheme);
         } else {
             popupContext = context;
         }
-        mPopupWindow = new SimpleMenuPopupWindow(popupContext, attrs, R.styleable.SimpleMenuPreference_android_popupMenuStyle, popupStyle);
+        mPopupWindow = new SimpleMenuPopupWindow(
+                popupContext, attrs, R.styleable.SimpleMenuPreference_android_popupMenuStyle, popupStyle);
         mPopupWindow.setOnItemClickListener(i -> {
             int value = getEntryValues()[i];
             if (callChangeListener(value)) {
@@ -100,8 +98,7 @@ public class IntegerSimpleMenuPreference extends Preference {
     }
 
     @SuppressLint("RestrictedApi")
-    private static int[] getIntArray(TypedArray a, @StyleableRes int index,
-                                     @StyleableRes int fallbackIndex) {
+    private static int[] getIntArray(TypedArray a, @StyleableRes int index, @StyleableRes int fallbackIndex) {
         int resourceId = TypedArrayUtils.getResourceId(a, index, fallbackIndex, 0);
         return a.getResources().getIntArray(resourceId);
     }
@@ -119,8 +116,9 @@ public class IntegerSimpleMenuPreference extends Preference {
         mPopupWindow.setEntries(getEntries());
         mPopupWindow.setSelectedIndex(findIndexOfValue(getValue()));
 
-        View container = (View) mItemView   // itemView
-                .getParent();               // -> list (RecyclerView)
+        View container = (View)
+                mItemView // itemView
+                        .getParent(); // -> list (RecyclerView)
 
         mPopupWindow.show(mItemView, container, (int) mAnchor.getX());
     }
@@ -352,16 +350,15 @@ public class IntegerSimpleMenuPreference extends Preference {
             super(superState);
         }
 
-        public static final Parcelable.Creator<SavedState> CREATOR =
-                new Parcelable.Creator<SavedState>() {
-                    public SavedState createFromParcel(Parcel in) {
-                        return new SavedState(in);
-                    }
+        public static final Parcelable.Creator<SavedState> CREATOR = new Parcelable.Creator<SavedState>() {
+            public SavedState createFromParcel(Parcel in) {
+                return new SavedState(in);
+            }
 
-                    public SavedState[] newArray(int size) {
-                        return new SavedState[size];
-                    }
-                };
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        };
     }
 
     @Override
@@ -372,8 +369,8 @@ public class IntegerSimpleMenuPreference extends Preference {
         mAnchor = holder.itemView.findViewById(android.R.id.empty);
 
         if (mAnchor == null) {
-            throw new IllegalStateException("SimpleMenuPreference item layout must contain" +
-                    "a view id is android.R.id.empty to support iconSpaceReserved");
+            throw new IllegalStateException("SimpleMenuPreference item layout must contain"
+                    + "a view id is android.R.id.empty to support iconSpaceReserved");
         }
     }
 }

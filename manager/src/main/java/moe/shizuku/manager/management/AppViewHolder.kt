@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.content.res.AppCompatResources
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Job
 import moe.shizuku.manager.Helps
@@ -23,13 +23,14 @@ import rikka.recyclerview.BaseViewHolder
 import rikka.recyclerview.BaseViewHolder.Creator
 import rikka.shizuku.Shizuku
 
-class AppViewHolder(private val binding: AppListItemBinding) : BaseViewHolder<PackageInfo>(binding.root), View.OnClickListener {
+class AppViewHolder(private val binding: AppListItemBinding) :
+    BaseViewHolder<PackageInfo>(binding.root),
+    View.OnClickListener {
 
     companion object {
         @JvmField
         val CREATOR = Creator<PackageInfo> { inflater: LayoutInflater, parent: ViewGroup? -> AppViewHolder(AppListItemBinding.inflate(inflater, parent, false)) }
     }
-
 
     private val icon get() = binding.icon
     private val name get() = binding.title
@@ -64,10 +65,10 @@ class AppViewHolder(private val binding: AppListItemBinding) : BaseViewHolder<Pa
             }
             if (uid != 0) {
                 val dialog = MaterialAlertDialogBuilder(context)
-                        .setTitle(R.string.app_management_dialog_adb_is_limited_title)
-                        .setMessage(context.getString(R.string.app_management_dialog_adb_is_limited_message, Helps.ADB.get()).toHtml(HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE))
-                        .setPositiveButton(android.R.string.ok, null)
-                        .create()
+                    .setTitle(R.string.app_management_dialog_adb_is_limited_title)
+                    .setMessage(context.getString(R.string.app_management_dialog_adb_is_limited_message, Helps.ADB.get()).toHtml(HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE))
+                    .setPositiveButton(android.R.string.ok, null)
+                    .create()
                 dialog.setOnShowListener {
                     (it as AlertDialog).findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
                 }
@@ -77,7 +78,10 @@ class AppViewHolder(private val binding: AppListItemBinding) : BaseViewHolder<Pa
                 }
             }
         }
-        adapter.notifyItemChanged(adapterPosition, Any())
+        val position = bindingAdapterPosition
+        if (position != RecyclerView.NO_POSITION) {
+            adapter.notifyItemChanged(position, Any())
+        }
         adapter.notifyItemChanged(0)
     }
 

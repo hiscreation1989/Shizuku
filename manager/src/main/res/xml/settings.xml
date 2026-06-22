@@ -6,33 +6,40 @@
     <!-- Empty preference to fix issue with Android TVs not being able to re-focus on appbar if category is first item -->
     <Preference
         android:key="empty"
+        app:iconSpaceReserved="false"
         style="@style/Preference.Rikka.Material3.Empty" />
 
     <PreferenceCategory
         android:key="category_behavior"
+        app:iconSpaceReserved="false"
         android:title="@string/settings_behavior">
 
         <SwitchPreferenceCompat
             android:key="start_on_boot"
+            app:iconSpaceReserved="false"
             android:title="@string/settings_start_on_boot" />
 
         <SwitchPreferenceCompat
             android:key="watchdog"
+            app:iconSpaceReserved="false"
             android:summary="@string/settings_watchdog_summary"
             android:title="@string/settings_watchdog" />
 
         <SwitchPreferenceCompat
             android:key="tcp_mode"
+            app:iconSpaceReserved="false"
             android:title="@string/settings_tcp_mode" 
             android:defaultValue="true" />
 
         <EditTextPreference
             android:key="tcp_port"
+            app:iconSpaceReserved="false"
             android:title="@string/settings_tcp_port"
             android:inputType="number" />
 
         <SwitchPreferenceCompat
             android:key="auto_disable_usb_debugging"
+            app:iconSpaceReserved="false"
             android:title="@string/settings_auto_disable_usb_debugging"
             android:summary="@string/settings_auto_disable_usb_debugging_summary" />
 
@@ -40,67 +47,80 @@
 
     <PreferenceCategory
         android:key="category_language"
+        app:iconSpaceReserved="false"
         android:title="@string/settings_language">
 
         <rikka.preference.SimpleMenuPreference
             android:defaultValue="SYSTEM"
             android:key="language"
+            app:iconSpaceReserved="false"
             android:summary="%s"
             android:title="@string/settings_language" />
 
         <Preference
             style="?preferenceInformationStyle"
             android:key="translation_contributors"
+            app:iconSpaceReserved="false"
             android:title="@string/settings_translation_contributors" />
 
         <Preference
             android:key="translation"
+            app:iconSpaceReserved="false"
             android:title="@string/settings_translation" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
         android:key="category_ui"
+        app:iconSpaceReserved="false"
         android:title="@string/settings_user_interface">
 
         <moe.shizuku.manager.settings.IntegerSimpleMenuPreference
             android:entries="@array/night_mode"
             android:entryValues="@array/night_mode_value"
             android:key="night_mode"
+            app:iconSpaceReserved="false"
             android:summary="%s"
             android:title="@string/dark_theme" />
 
         <SwitchPreferenceCompat
             android:key="black_night_theme"
+            app:iconSpaceReserved="false"
             android:summary="@string/settings_black_night_theme_summary"
             android:title="@string/settings_black_night_theme" />
 
         <SwitchPreferenceCompat
             android:key="use_system_color"
+            app:iconSpaceReserved="false"
             android:title="@string/settings_use_system_color" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
         android:key="category_support"
+        app:iconSpaceReserved="false"
         android:title="@string/settings_support">
 
         <Preference
             android:key="help"
+            app:iconSpaceReserved="false"
             android:title="@string/settings_help" />
 
         <Preference
             android:key="report_bug"
+            app:iconSpaceReserved="false"
             android:title="@string/settings_report_bug" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
         android:key="category_advanced"
+        app:iconSpaceReserved="false"
         android:title="@string/settings_advanced">
 
         <SwitchPreferenceCompat
             android:key="legacy_pairing"
+            app:iconSpaceReserved="false"
             android:summary="@string/settings_legacy_pairing_summary"
             android:title="@string/settings_legacy_pairing" />
 

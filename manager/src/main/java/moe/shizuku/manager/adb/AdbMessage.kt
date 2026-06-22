@@ -12,29 +12,31 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 class AdbMessage(
-        val command: Int,
-        val arg0: Int,
-        val arg1: Int,
-        val data_length: Int,
-        val data_crc32: Int,
-        val magic: Int,
-        val data: ByteArray?
+    val command: Int,
+    val arg0: Int,
+    val arg1: Int,
+    val data_length: Int,
+    val data_crc32: Int,
+    val magic: Int,
+    val data: ByteArray?,
 ) {
 
     constructor(command: Int, arg0: Int, arg1: Int, data: String) : this(
-            command,
-            arg0,
-            arg1,
-            "$data\u0000".toByteArray())
+        command,
+        arg0,
+        arg1,
+        "$data\u0000".toByteArray(),
+    )
 
     constructor(command: Int, arg0: Int, arg1: Int, data: ByteArray?) : this(
-            command,
-            arg0,
-            arg1,
-            data?.size ?: 0,
-            crc32(data),
-            (command.toLong() xor 0xFFFFFFFF).toInt(),
-            data)
+        command,
+        arg0,
+        arg1,
+        data?.size ?: 0,
+        crc32(data),
+        (command.toLong() xor 0xFFFFFFFF).toInt(),
+        data,
+    )
 
     fun validate(): Boolean {
         if (command != magic xor -0x1) return false
@@ -77,7 +79,9 @@ class AdbMessage(
         if (data != null) {
             if (other.data == null) return false
             if (!data.contentEquals(other.data)) return false
-        } else if (other.data != null) return false
+        } else if (other.data != null) {
+            return false
+        }
 
         return true
     }
@@ -93,9 +97,7 @@ class AdbMessage(
         return result
     }
 
-    override fun toString(): String {
-        return "AdbMessage(${toStringShort()})"
-    }
+    override fun toString(): String = "AdbMessage(${toStringShort()})"
 
     fun toStringShort(): String {
         val commandString = when (command) {
@@ -116,15 +118,15 @@ class AdbMessage(
 
         const val HEADER_LENGTH = 24
 
-
         private fun crc32(data: ByteArray?): Int {
             if (data == null) return 0
             var res = 0
             for (b in data) {
-                if (b >= 0)
+                if (b >= 0) {
                     res += b
-                else
+                } else {
                     res += b + 256
+                }
             }
             return res
         }

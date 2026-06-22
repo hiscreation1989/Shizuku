@@ -3,7 +3,6 @@ package moe.shizuku.manager.widget;
 import android.content.Context;
 import android.graphics.Rect;
 import android.view.View;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -31,7 +30,11 @@ public class VerticalPaddingDecoration extends RecyclerView.ItemDecoration {
     }
 
     @Override
-    public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+    public void getItemOffsets(
+            @NonNull Rect outRect,
+            @NonNull View view,
+            @NonNull RecyclerView parent,
+            @NonNull RecyclerView.State state) {
         if (parent.getAdapter() == null) {
             return;
         }
@@ -44,4 +47,3 @@ public class VerticalPaddingDecoration extends RecyclerView.ItemDecoration {
         }
     }
 }
-

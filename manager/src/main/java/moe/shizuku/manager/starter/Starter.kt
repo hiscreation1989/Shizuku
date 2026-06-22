@@ -1,13 +1,13 @@
 package moe.shizuku.manager.starter
 
 import androidx.lifecycle.asFlow
-import java.io.File
-import java.util.concurrent.TimeoutException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.TimeoutCancellationException
 import moe.shizuku.manager.application
 import moe.shizuku.manager.utils.ShizukuStateMachine
+import java.io.File
+import java.util.concurrent.TimeoutException
 
 object Starter {
 
@@ -33,5 +33,4 @@ object Starter {
             throw TimeoutException("Failed to receive binder within 1 minute")
         }
     }
-
 }

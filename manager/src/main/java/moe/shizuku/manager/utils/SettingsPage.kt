@@ -1,6 +1,5 @@
 package moe.shizuku.manager.utils
 
-import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -8,17 +7,16 @@ import android.os.Build
 import android.provider.Settings
 import android.service.quicksettings.TileService
 import android.util.Log
-import moe.shizuku.manager.adb.AdbPairingAccessibilityService
 import moe.shizuku.manager.service.WatchdogService
 
 sealed class SettingsPage(
     private val action: String,
-    private val fragmentArg: String? = null
+    private val fragmentArg: String? = null,
 ) {
 
     sealed class Developer(
         action: String = Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS,
-        fragmentArg: String? = null
+        fragmentArg: String? = null,
     ) : SettingsPage(action, fragmentArg) {
 
         object HighlightUsbDebugging : Developer(fragmentArg = "enable_adb")
@@ -37,8 +35,8 @@ sealed class SettingsPage(
                         Intent.EXTRA_COMPONENT_NAME,
                         ComponentName(
                             packageName,
-                            "com.android.settings.development.qstile.DevelopmentTiles\$WirelessDebugging"
-                        )
+                            "com.android.settings.development.qstile.DevelopmentTiles\$WirelessDebugging",
+                        ),
                     )
                     addFlags(defaultFlags)
                 }
@@ -54,25 +52,20 @@ sealed class SettingsPage(
                 }
             }
         }
-        
     }
 
     sealed class Notifications(
         action: String = Settings.ACTION_APP_NOTIFICATION_SETTINGS,
-        fragmentArg: String? = null
+        fragmentArg: String? = null,
     ) : SettingsPage(action, fragmentArg) {
-        override fun buildIntent(context: Context): Intent {
-            return super.buildIntent(context).apply {
-                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-            }
+        override fun buildIntent(context: Context): Intent = super.buildIntent(context).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
         }
 
         object NotificationSettings : Notifications()
         object NotificationChannel : Notifications() {
-            override fun buildIntent(context: Context): Intent {
-                return super.buildIntent(context).apply {
-                    putExtra(Settings.EXTRA_CHANNEL_ID, WatchdogService.CRASH_CHANNEL_ID)
-                }
+            override fun buildIntent(context: Context): Intent = super.buildIntent(context).apply {
+                putExtra(Settings.EXTRA_CHANNEL_ID, WatchdogService.CRASH_CHANNEL_ID)
             }
         }
     }
@@ -82,9 +75,9 @@ sealed class SettingsPage(
 
     protected val defaultFlags =
         Intent.FLAG_ACTIVITY_NEW_TASK or
-        Intent.FLAG_ACTIVITY_NO_HISTORY or
-        Intent.FLAG_ACTIVITY_CLEAR_TASK or
-        Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+            Intent.FLAG_ACTIVITY_NO_HISTORY or
+            Intent.FLAG_ACTIVITY_CLEAR_TASK or
+            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
 
     open fun buildIntent(context: Context): Intent = Intent(action).apply {
         fragmentArg?.let {
@@ -101,5 +94,4 @@ sealed class SettingsPage(
             Log.e("SettingsUtils", "Failed to start Settings activity", e)
         }
     }
-
 }

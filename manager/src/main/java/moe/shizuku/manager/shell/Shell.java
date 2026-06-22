@@ -3,7 +3,6 @@ package moe.shizuku.manager.shell;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.IBinder;
-
 import rikka.rish.Rish;
 import rikka.rish.RishConfig;
 import rikka.shizuku.Shizuku;

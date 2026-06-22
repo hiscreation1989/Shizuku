@@ -11,21 +11,15 @@ import android.widget.TextView
 import moe.shizuku.manager.utils.CustomTabsHelper
 import rikka.html.text.HtmlCompat
 
-fun CharSequence.toHtml(flags: Int = 0): Spanned {
-    return HtmlCompat.fromHtml(this.toString(), flags)
-}
+fun CharSequence.toHtml(flags: Int = 0): Spanned = HtmlCompat.fromHtml(this.toString(), flags)
 
-fun CharSequence.toHtml(tagHandler: HtmlCompat.TagHandler): Spanned {
-    return HtmlCompat.fromHtml(this.toString(), null, tagHandler)
-}
+fun CharSequence.toHtml(tagHandler: HtmlCompat.TagHandler): Spanned = HtmlCompat.fromHtml(this.toString(), null, tagHandler)
 
-fun CharSequence.toHtml(flags: Int, tagHandler: HtmlCompat.TagHandler): Spanned {
-    return HtmlCompat.fromHtml(this.toString(), flags, null, tagHandler)
-}
+fun CharSequence.toHtml(flags: Int, tagHandler: HtmlCompat.TagHandler): Spanned = HtmlCompat.fromHtml(this.toString(), flags, null, tagHandler)
 
-fun String.asLink(url: String): CharSequence {
-    return SpannableString(this).apply {
-        setSpan(object : ClickableSpan() {
+fun String.asLink(url: String): CharSequence = SpannableString(this).apply {
+    setSpan(
+        object : ClickableSpan() {
             override fun onClick(v: View) {
                 CustomTabsHelper.launchUrlOrCopy(v.context, url)
             }
@@ -35,8 +29,11 @@ fun String.asLink(url: String): CharSequence {
                 ds.isUnderlineText = true
                 ds.color = ds.linkColor
             }
-        }, 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-    }
+        },
+        0,
+        length,
+        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+    )
 }
 
 fun TextView.applyTemplateArgs(vararg args: CharSequence) {

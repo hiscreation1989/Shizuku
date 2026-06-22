@@ -37,16 +37,16 @@ class StartAdbViewHolder(binding: HomeStartAdbBinding, root: View) : BaseViewHol
                     HtmlCompat.fromHtml(
                         context.getString(
                             R.string.home_adb_dialog_view_command_message,
-                            Starter.adbCommand
-                        )
-                    )
+                            Starter.adbCommand,
+                        ),
+                    ),
                 )
                 .setPositiveButton(R.string.home_adb_dialog_view_command_copy_button) { _, _ ->
                     if (ClipboardUtils.put(context, Starter.adbCommand)) {
                         Toast.makeText(
                             context,
                             context.getString(R.string.toast_copied_to_clipboard),
-                            Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT,
                         ).show()
                     }
                 }
@@ -57,7 +57,7 @@ class StartAdbViewHolder(binding: HomeStartAdbBinding, root: View) : BaseViewHol
                     intent.putExtra(Intent.EXTRA_TEXT, Starter.adbCommand)
                     intent = Intent.createChooser(
                         intent,
-                        context.getString(R.string.home_adb_dialog_view_command_button_send)
+                        context.getString(R.string.home_adb_dialog_view_command_button_send),
                     )
                     context.startActivity(intent)
                 }

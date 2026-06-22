@@ -1,6 +1,7 @@
 package moe.shizuku.manager.starter
 
 import android.app.Application
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.viewModels
@@ -11,12 +12,6 @@ import androidx.lifecycle.viewModelScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.Shell
-import java.net.ConnectException
-import java.net.SocketTimeoutException
-import javax.net.ssl.SSLProtocolException
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -25,14 +20,21 @@ import kotlinx.coroutines.withContext
 import moe.shizuku.manager.AppConstants.EXTRA
 import moe.shizuku.manager.R
 import moe.shizuku.manager.adb.AdbKeyException
+import moe.shizuku.manager.adb.AdbPairRequiredException
+import moe.shizuku.manager.adb.AdbPairingTutorialActivity
 import moe.shizuku.manager.adb.AdbStarter
 import moe.shizuku.manager.app.AppBarActivity
-import moe.shizuku.manager.utils.ShizukuStateMachine
 import moe.shizuku.manager.databinding.StarterActivityBinding
+import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.lifecycle.Resource
 import rikka.lifecycle.Status
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import javax.net.ssl.SSLProtocolException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
-private class NotRootedException: Exception()
+private class NotRootedException : Exception()
 
 class StarterActivity : AppBarActivity() {
 
@@ -53,20 +55,30 @@ class StarterActivity : AppBarActivity() {
                     if (!isFinishing) finish()
                 }, 3000)
             } else if (it.status == Status.ERROR) {
+                if (it.error is AdbPairRequiredException) {
+                    startActivity(Intent(this, AdbPairingTutorialActivity::class.java))
+                    finish()
+                    return@observe
+                }
+
                 var message = 0
                 when (it.error) {
                     is AdbKeyException -> {
                         message = R.string.adb_error_key_store
                     }
+
                     is NotRootedException -> {
                         message = R.string.start_with_root_failed
                     }
+
                     is SocketTimeoutException -> {
                         message = R.string.cannot_connect_port
                     }
+
                     is ConnectException -> {
                         message = R.string.cannot_connect_port
                     }
+
                     is SSLProtocolException -> {
                         message = R.string.adb_pair_required
                     }
@@ -91,7 +103,7 @@ class StarterActivity : AppBarActivity() {
             hasStarted = true
             viewModel.start(
                 intent.getBooleanExtra(EXTRA_IS_ROOT, false),
-                intent.getIntExtra(EXTRA_PORT, 0)
+                intent.getIntExtra(EXTRA_PORT, 0),
             )
         }
     }
@@ -124,18 +136,30 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
         started = true
 
         viewModelScope.launch(handler) {
-            if (root) startRoot()
-            else AdbStarter.startAdb(appContext, port, { log(it) })
+            if (root) {
+                startRoot()
+            } else {
+                AdbStarter.startAdb(appContext, port, { log(it) })
+            }
             Starter.waitForBinder({ log(it) })
         }
     }
 
     private fun log(line: String? = null, error: Throwable? = null) {
         line?.let { sb.appendLine(it) }
-        error?.let { sb.appendLine().appendLine(Log.getStackTraceString(it)) }
+        error?.let {
+            if (it is AdbPairRequiredException) {
+                sb.appendLine().appendLine(appContext.getString(R.string.adb_pair_required))
+            } else {
+                sb.appendLine().appendLine(Log.getStackTraceString(it))
+            }
+        }
 
-        if (error == null) _output.postValue(Resource.success(sb))
-        else _output.postValue(Resource.error(error, sb))
+        if (error == null) {
+            _output.postValue(Resource.success(sb))
+        } else {
+            _output.postValue(Resource.error(error, sb))
+        }
     }
 
     private suspend fun startRoot() {
@@ -156,7 +180,9 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
             suspendCancellableCoroutine { cont ->
                 Shell.cmd(Starter.internalCommand)
                     .to(object : CallbackList<String?>() {
-                        override fun onAddElement(s: String?) { s?.let { log(it) } }
+                        override fun onAddElement(s: String?) {
+                            s?.let { log(it) }
+                        }
                     })
                     .submit {
                         if (it.isSuccess) {
@@ -168,5 +194,4 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-    
 }

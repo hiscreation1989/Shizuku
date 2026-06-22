@@ -3,7 +3,6 @@ package moe.shizuku.manager.app
 import android.content.Context
 import android.view.View
 import com.google.android.material.snackbar.Snackbar
-import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.R
 
 object SnackbarHelper {
@@ -17,7 +16,7 @@ object SnackbarHelper {
         duration: Int = Snackbar.LENGTH_SHORT,
         actionText: String? = null,
         action: (() -> Unit)? = null,
-        onDismiss: ((event: Int) -> Unit)? = null
+        onDismiss: ((event: Int) -> Unit)? = null,
     ) {
         snackbar = Snackbar.make(view, msg, duration)
             .setDuration(duration)
@@ -38,5 +37,4 @@ object SnackbarHelper {
     fun dismiss() {
         snackbar?.dismiss()
     }
-
 }

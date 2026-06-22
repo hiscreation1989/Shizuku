@@ -7,12 +7,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.LayoutRes
-import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.Toolbar
+import androidx.core.graphics.ColorUtils
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.appbar.AppBarLayout
 import moe.shizuku.manager.R
 import rikka.core.ktx.unsafeLazy
+import rikka.core.res.resolveColor
 
 abstract class AppBarActivity : AppActivity() {
 
@@ -33,12 +35,25 @@ abstract class AppBarActivity : AppActivity() {
         super.setContentView(getLayoutId())
 
         setSupportActionBar(toolbar)
+
+        val toolbarColor = theme.resolveColor(R.attr.appColorPrimary)
+        val foregroundColor = if (ColorUtils.calculateLuminance(toolbarColor) > 0.5) Color.BLACK else Color.WHITE
+
+        toolbarContainer.setBackgroundColor(toolbarColor)
+        toolbar.setBackgroundColor(toolbarColor)
+        toolbar.setTitleTextColor(foregroundColor)
+        toolbar.setSubtitleTextColor(foregroundColor)
+        toolbar.navigationIcon?.mutate()?.let { DrawableCompat.setTint(it, foregroundColor) }
+        toolbar.overflowIcon?.mutate()?.let { DrawableCompat.setTint(it, foregroundColor) }
+
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            window.statusBarColor = Color.TRANSPARENT
+        }
     }
 
     @LayoutRes
-    open fun getLayoutId(): Int {
-        return R.layout.appbar_activity
-    }
+    open fun getLayoutId(): Int = R.layout.appbar_activity
 
     override fun setContentView(layoutResID: Int) {
         layoutInflater.inflate(layoutResID, rootView, true)
@@ -52,7 +67,6 @@ abstract class AppBarActivity : AppActivity() {
     override fun setContentView(view: View?, params: ViewGroup.LayoutParams?) {
         rootView.addView(view, 0, params)
     }
-
 }
 
 abstract class AppBarFragmentActivity : AppBarActivity() {
@@ -72,5 +86,4 @@ abstract class AppBarFragmentActivity : AppBarActivity() {
                 .commit()
         }
     }
-    
 }

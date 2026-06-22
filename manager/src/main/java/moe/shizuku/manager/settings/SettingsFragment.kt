@@ -1,52 +1,55 @@
 package moe.shizuku.manager.settings
 
-import android.content.pm.PackageManager
-import android.content.ActivityNotFoundException
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
 import android.text.InputType
 import android.text.TextUtils
 import android.util.TypedValue
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat.Type
 import androidx.lifecycle.lifecycleScope
-import androidx.preference.*
+import androidx.preference.EditTextPreference
+import androidx.preference.ListPreference
+import androidx.preference.Preference
 import androidx.preference.Preference.SummaryProvider
+import androidx.preference.PreferenceCategory
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.TwoStatePreference
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlin.coroutines.resume
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
-import moe.shizuku.manager.ShizukuSettings.Keys.*
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_BLACK_NIGHT_THEME
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_CATEGORY_ADVANCED
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_HELP
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_LANGUAGE
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_LEGACY_PAIRING
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_NIGHT_MODE
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_REPORT_BUG
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_START_ON_BOOT
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_TCP_MODE
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_TCP_PORT
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_TRANSLATION
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_TRANSLATION_CONTRIBUTORS
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_USE_SYSTEM_COLOR
+import moe.shizuku.manager.ShizukuSettings.Keys.KEY_WATCHDOG
 import moe.shizuku.manager.adb.AdbStarter
 import moe.shizuku.manager.app.SnackbarHelper
 import moe.shizuku.manager.app.ThemeHelper
-import moe.shizuku.manager.ktx.isComponentEnabled
-import moe.shizuku.manager.ktx.setComponentEnabled
 import moe.shizuku.manager.ktx.toHtml
-import moe.shizuku.manager.receiver.BootCompleteReceiver
 import moe.shizuku.manager.receiver.NotifCancelReceiver
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter
 import moe.shizuku.manager.utils.CustomTabsHelper
@@ -57,12 +60,14 @@ import rikka.core.util.ResourceUtils
 import rikka.html.text.HtmlCompat
 import rikka.material.app.LocaleDelegate
 import rikka.recyclerview.addEdgeSpacing
-import rikka.recyclerview.addItemSpacing
 import rikka.recyclerview.fixEdgeEffect
 import rikka.shizuku.manager.ShizukuLocales
-import java.util.*
+import java.util.Locale
+import kotlin.coroutines.resume
 
-class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
+class SettingsFragment :
+    PreferenceFragmentCompat(),
+    SharedPreferences.OnSharedPreferenceChangeListener {
 
     private lateinit var startOnBootPreference: TwoStatePreference
     private lateinit var watchdogPreference: TwoStatePreference
@@ -148,7 +153,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                                 .setPositiveButton(android.R.string.ok) { _, _ -> doToggle() }
                                 .setNegativeButton(android.R.string.cancel) { _, _ -> isChecked = !newValue }
                                 .show()
-                        } else { doToggle() }
+                        } else {
+                            doToggle()
+                        }
                     }
                     false
                 }
@@ -189,10 +196,12 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                             icon = maybeGetRestartIcon(KEY_TCP_MODE)
                             tcpPortPreference.isVisible = newValue
                         }
-                        
+
                         if (!newValue && !ShizukuStateMachine.isRunning() && needsRestart(KEY_TCP_MODE, newValue)) {
                             promptStopTcp { applyChange() }
-                        } else maybePromptRestart (KEY_TCP_MODE, newValue) { applyChange() }
+                        } else {
+                            maybePromptRestart(KEY_TCP_MODE, newValue) { applyChange() }
+                        }
                     }
                     false
                 }
@@ -227,7 +236,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                         text = port?.toString()
                         icon = maybeGetRestartIcon(KEY_TCP_PORT)
                     }
-                    maybePromptRestart (KEY_TCP_PORT, port ?: 5555) { applyChange() }
+                    maybePromptRestart(KEY_TCP_PORT, port ?: 5555) { applyChange() }
                 } else {
                     SnackbarHelper.show(context, requireView(), context.getString(R.string.snackbar_invalid_port))
                 }
@@ -267,11 +276,14 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             if (ShizukuSettings.getNightMode() != AppCompatDelegate.MODE_NIGHT_NO) {
                 isChecked = ThemeHelper.isBlackNightTheme(context)
                 setOnPreferenceChangeListener { _, _ ->
-                    if (ResourceUtils.isNightMode(context.resources.configuration))
+                    if (ResourceUtils.isNightMode(context.resources.configuration)) {
                         activity?.recreate()
+                    }
                     true
                 }
-            } else isVisible = false
+            } else {
+                isVisible = false
+            }
         }
 
         useSystemColorPreference.apply {
@@ -279,12 +291,15 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 isChecked = ThemeHelper.isUsingSystemColor()
                 setOnPreferenceChangeListener { _, value ->
                     if (value is Boolean) {
-                        if (ThemeHelper.isUsingSystemColor() != value)
+                        if (ThemeHelper.isUsingSystemColor() != value) {
                             activity?.recreate()
+                        }
                     }
                     true
                 }
-            } else isVisible = false
+            } else {
+                isVisible = false
+            }
         }
 
         translationPreference.apply {
@@ -299,7 +314,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             val contributors = context.getString(R.string.translation_contributors).toHtml().toString()
             if (contributors.isNotBlank()) {
                 summary = contributors
-            } else isVisible = false
+            } else {
+                isVisible = false
+            }
         }
 
         helpPreference.setOnPreferenceClickListener {
@@ -340,21 +357,20 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     override fun onCreateRecyclerView(
         inflater: LayoutInflater,
         parent: ViewGroup,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): RecyclerView {
         val recyclerView = super.onCreateRecyclerView(inflater, parent, savedInstanceState)
+        val horizontalMargin = resources.getDimensionPixelSize(R.dimen.margin_horizontal)
 
-        ViewCompat.setOnApplyWindowInsetsListener(recyclerView) { v, insets ->
+        recyclerView.addEdgeSpacing(left = horizontalMargin.toFloat(), right = horizontalMargin.toFloat())
+
+        ViewCompat.setOnApplyWindowInsetsListener(recyclerView) { _, insets ->
             val systemBarsInsets = insets.getInsets(Type.systemBars() or Type.displayCutout())
-            recyclerView.addItemSpacing(
-                left = systemBarsInsets.left.toFloat(),
-                right = systemBarsInsets.right.toFloat()
-            )
             recyclerView.setPadding(
-                recyclerView.paddingLeft,
+                systemBarsInsets.left,
                 recyclerView.paddingTop,
-                recyclerView.paddingRight,
-                systemBarsInsets.bottom
+                systemBarsInsets.right,
+                systemBarsInsets.bottom,
             )
             insets
         }
@@ -371,10 +387,12 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 val newMode = newValue as? Boolean ?: ShizukuSettings.getTcpMode()
                 (currentPort > 0) != newMode
             }
+
             KEY_TCP_PORT -> {
                 val newPort = newValue as? Int ?: ShizukuSettings.getTcpPort()
                 (currentPort > 0) && (currentPort != newPort)
             }
+
             else -> false
         }
     }
@@ -382,7 +400,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private fun maybeGetRestartIcon(setting: String): Drawable? {
         val context = requireContext()
         if (!needsRestart(setting)) return null
-        
         val icon = context.getDrawable(R.drawable.ic_server_restart)
         return tint(icon)
     }
@@ -395,7 +412,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         return icon
     }
 
-    private fun promptStopTcp (applyChange: () -> Unit) {
+    private fun promptStopTcp(applyChange: () -> Unit) {
         val context = requireContext()
         MaterialAlertDialogBuilder(context)
             .setTitle(android.R.string.dialog_alert_title)
@@ -414,7 +431,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             .show()
     }
 
-    private fun maybePromptRestart (setting: String, newValue: Any? = null, applyChange: () -> Unit) {
+    private fun maybePromptRestart(setting: String, newValue: Any? = null, applyChange: () -> Unit) {
         val context = requireContext()
         if (!ShizukuStateMachine.isRunning() || !needsRestart(setting, newValue)) {
             applyChange()
@@ -422,32 +439,33 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         } else {
             val message = buildString {
                 append(context.getString(R.string.settings_restart_dialog_message))
-                if (setting == KEY_TCP_MODE)
+                if (setting == KEY_TCP_MODE) {
                     append(context.getString(R.string.settings_restart_dialog_message_wifi_required))
+                }
             }
 
             MaterialAlertDialogBuilder(context)
-            .setTitle(R.string.settings_restart_dialog_title)
-            .setMessage(HtmlCompat.fromHtml(message))
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                applyChange()
-                ShizukuReceiverStarter.start(context, true)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+                .setTitle(R.string.settings_restart_dialog_title)
+                .setMessage(HtmlCompat.fromHtml(message))
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    applyChange()
+                    ShizukuReceiverStarter.start(context, true)
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
         }
     }
 
-    private fun maybeToggleBatterySensitiveSetting (
+    private fun maybeToggleBatterySensitiveSetting(
         newValue: Boolean,
-        onResult: (Boolean) -> Unit
+        onResult: (Boolean) -> Unit,
     ) {
         val context = requireContext()
         if (!newValue || SettingsHelper.isIgnoringBatteryOptimizations(context) || EnvironmentUtils.isTelevision()) {
             onResult(true)
             return
         }
-            
+
         lifecycleScope.launch {
             val result = suspendCancellableCoroutine<Boolean> { continuation ->
                 batteryOptimizationContinuation = continuation
@@ -459,9 +477,10 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     actionText = context.getString(R.string.snackbar_action_fix),
                     action = { SettingsHelper.requestIgnoreBatteryOptimizations(context, batteryOptimizationListener) },
                     onDismiss = { event ->
-                        if (event != Snackbar.Callback.DISMISS_EVENT_ACTION && continuation.isActive)
+                        if (event != Snackbar.Callback.DISMISS_EVENT_ACTION && continuation.isActive) {
                             continuation.resume(false)
-                    }
+                        }
+                    },
                 )
             }
             onResult(result)
@@ -487,22 +506,24 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             }
 
             val locale = Locale.forLanguageTag(displayLocale.toString())
-            val localeName = if (!TextUtils.isEmpty(locale.script))
+            val localeName = if (!TextUtils.isEmpty(locale.script)) {
                 locale.getDisplayScript(locale)
-            else
+            } else {
                 locale.getDisplayName(locale)
+            }
 
-            val localizedLocaleName = if (!TextUtils.isEmpty(locale.script))
+            val localizedLocaleName = if (!TextUtils.isEmpty(locale.script)) {
                 locale.getDisplayScript(currentLocale)
-            else
+            } else {
                 locale.getDisplayName(currentLocale)
+            }
 
             localizedLocales.add(
                 if (index != currentLocaleIndex) {
                     "$localeName<br><small>$localizedLocaleName<small>".toHtml()
                 } else {
                     localizedLocaleName
-                }
+                },
             )
         }
 
@@ -512,6 +533,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             TextUtils.isEmpty(currentLocaleTag) || "SYSTEM" == currentLocaleTag -> {
                 getString(R.string.follow_system)
             }
+
             currentLocaleIndex != -1 -> {
                 val localizedLocale = localizedLocales[currentLocaleIndex]
                 val newLineIndex = localizedLocale.indexOf('\n')
@@ -521,6 +543,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     localizedLocale.subSequence(0, newLineIndex).toString()
                 }
             }
+
             else -> {
                 ""
             }

@@ -14,15 +14,14 @@ import moe.shizuku.manager.adb.AdbProtocol.A_STLS
 import moe.shizuku.manager.adb.AdbProtocol.A_STLS_VERSION
 import moe.shizuku.manager.adb.AdbProtocol.A_VERSION
 import moe.shizuku.manager.adb.AdbProtocol.A_WRTE
-import moe.shizuku.manager.ktx.logd
 import rikka.core.util.BuildUtils
 import java.io.Closeable
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.net.InetSocketAddress
 import javax.net.ssl.SSLSocket
 
 private const val TAG = "AdbClient"
@@ -107,10 +106,12 @@ class AdbClient(private val host: String, private val port: Int, private val key
                     }
                 }
             }
+
             A_CLSE -> {
                 val remoteId = message.arg0
                 write(A_CLSE, localId, remoteId)
             }
+
             else -> {
                 error("not A_OKAY or A_CLSE")
             }

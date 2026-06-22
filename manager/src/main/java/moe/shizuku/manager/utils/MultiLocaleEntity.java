@@ -1,10 +1,8 @@
 package moe.shizuku.manager.utils;
 
 import androidx.annotation.NonNull;
-
 import java.util.LinkedHashMap;
 import java.util.Locale;
-
 import moe.shizuku.manager.ShizukuSettings;
 
 public class MultiLocaleEntity extends LinkedHashMap<String, String> {
@@ -36,7 +34,7 @@ public class MultiLocaleEntity extends LinkedHashMap<String, String> {
             String region = locale.getCountry();
 
             // fully match
-            locale = new Locale(language, region);
+            locale = Locale.forLanguageTag(language + (region.isEmpty() ? "" : "-" + region));
             for (String l : keySet()) {
                 if (locale.toString().equals(l.replace('-', '_'))) {
                     return get(l);
@@ -44,7 +42,7 @@ public class MultiLocaleEntity extends LinkedHashMap<String, String> {
             }
 
             // match language only keys
-            locale = new Locale(language);
+            locale = Locale.forLanguageTag(language);
             for (String l : keySet()) {
                 if (locale.toString().equals(l)) {
                     return get(l);
@@ -67,8 +65,7 @@ public class MultiLocaleEntity extends LinkedHashMap<String, String> {
             }
 
             for (String key : keySet()) {
-                if (!"overwrite_default".equals(key))
-                    return get(key);
+                if (!"overwrite_default".equals(key)) return get(key);
             }
         }
         return null;

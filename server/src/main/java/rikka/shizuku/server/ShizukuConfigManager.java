@@ -6,12 +6,9 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.AtomicFile;
-
 import androidx.annotation.Nullable;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -22,7 +19,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
 import kotlin.collections.ArraysKt;
 import rikka.hidden.compat.PackageManagerApis;
 import rikka.hidden.compat.PermissionManagerApis;
@@ -31,11 +27,9 @@ import rikka.shizuku.server.ktx.HandlerKt;
 
 public class ShizukuConfigManager extends ConfigManager {
 
-    private static final Gson GSON_IN = new GsonBuilder()
-            .create();
-    private static final Gson GSON_OUT = new GsonBuilder()
-            .setVersion(ShizukuConfig.LATEST_VERSION)
-            .create();
+    private static final Gson GSON_IN = new GsonBuilder().create();
+    private static final Gson GSON_OUT =
+            new GsonBuilder().setVersion(ShizukuConfig.LATEST_VERSION).create();
 
     private static final long WRITE_DELAY = 10 * 1000;
 
@@ -149,7 +143,8 @@ public class ShizukuConfigManager extends ConfigManager {
         }
 
         for (int userId : UserManagerApis.getUserIdsNoThrow()) {
-            for (PackageInfo pi : PackageManagerApis.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
+            for (PackageInfo pi :
+                    PackageManagerApis.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
                 if (pi == null
                         || pi.applicationInfo == null
                         || pi.requestedPermissions == null
@@ -160,7 +155,8 @@ public class ShizukuConfigManager extends ConfigManager {
                 int uid = pi.applicationInfo.uid;
                 boolean allowed;
                 try {
-                    allowed = PermissionManagerApis.checkPermission(PERMISSION, uid) == PackageManager.PERMISSION_GRANTED;
+                    allowed =
+                            PermissionManagerApis.checkPermission(PERMISSION, uid) == PackageManager.PERMISSION_GRANTED;
                 } catch (Throwable e) {
                     LOGGER.w("checkPermission");
                     continue;
@@ -199,8 +195,7 @@ public class ShizukuConfigManager extends ConfigManager {
         return null;
     }
 
-    @Nullable
-    public ShizukuConfig.PackageEntry find(int uid) {
+    @Nullable public ShizukuConfig.PackageEntry find(int uid) {
         synchronized (this) {
             return findLocked(uid);
         }
@@ -208,25 +203,33 @@ public class ShizukuConfigManager extends ConfigManager {
 
     private void updateLocked(int uid, List<String> packages, int mask, int values) {
         ShizukuConfig.PackageEntry entry = findLocked(uid);
+        boolean changed = false;
+
         if (entry == null) {
             entry = new ShizukuConfig.PackageEntry(uid, mask & values);
             config.packages.add(entry);
-        } else {
-            int newValue = (entry.flags & ~mask) | (mask & values);
-            if (newValue == entry.flags) {
-                return;
-            }
-            entry.flags = newValue;
+            changed = true;
         }
+
         if (packages != null) {
             for (String packageName : packages) {
                 if (entry.packages.contains(packageName)) {
                     continue;
                 }
                 entry.packages.add(packageName);
+                changed = true;
             }
         }
-        scheduleWriteLocked();
+
+        int newValue = (entry.flags & ~mask) | (mask & values);
+        if (newValue != entry.flags) {
+            entry.flags = newValue;
+            changed = true;
+        }
+
+        if (changed) {
+            scheduleWriteLocked();
+        }
     }
 
     public void update(int uid, List<String> packages, int mask, int values) {

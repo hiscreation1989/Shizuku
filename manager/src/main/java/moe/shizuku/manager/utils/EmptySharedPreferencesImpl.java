@@ -1,9 +1,7 @@
 package moe.shizuku.manager.utils;
 
 import android.content.SharedPreferences;
-
 import androidx.annotation.Nullable;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -15,14 +13,12 @@ public class EmptySharedPreferencesImpl implements SharedPreferences {
         return new HashMap<>();
     }
 
-    @Nullable
-    @Override
+    @Nullable @Override
     public String getString(String key, @Nullable String defValue) {
         return defValue;
     }
 
-    @Nullable
-    @Override
+    @Nullable @Override
     public Set<String> getStringSet(String key, @Nullable Set<String> defValues) {
         return defValues;
     }
@@ -58,14 +54,10 @@ public class EmptySharedPreferencesImpl implements SharedPreferences {
     }
 
     @Override
-    public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
-
-    }
+    public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {}
 
     @Override
-    public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
-
-    }
+    public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {}
 
     private static class EditorImpl implements Editor {
 
@@ -115,8 +107,6 @@ public class EmptySharedPreferencesImpl implements SharedPreferences {
         }
 
         @Override
-        public void apply() {
-
-        }
+        public void apply() {}
     }
 }

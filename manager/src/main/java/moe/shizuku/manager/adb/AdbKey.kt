@@ -19,7 +19,13 @@ import java.math.BigInteger
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.security.*
+import java.security.Key
+import java.security.KeyFactory
+import java.security.KeyPairGenerator
+import java.security.KeyStore
+import java.security.Principal
+import java.security.PrivateKey
+import java.security.SecureRandom
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.interfaces.RSAPrivateKey
@@ -27,7 +33,8 @@ import java.security.interfaces.RSAPublicKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.RSAKeyGenParameterSpec
 import java.security.spec.RSAPublicKeySpec
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.spec.GCMParameterSpec
@@ -50,25 +57,26 @@ class AdbKey(private val adbKeyStore: AdbKeyStore, name: String) {
         private const val TAG_SIZE_IN_BYTES = 16
 
         private val PADDING = byteArrayOf(
-                0x00, 0x01, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x00,
-                0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00,
-                0x04, 0x14)
+            0x00, 0x01, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x00,
+            0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00,
+            0x04, 0x14,
+        )
     }
 
     private val encryptionKey: Key
@@ -84,16 +92,17 @@ class AdbKey(private val adbKeyStore: AdbKeyStore, name: String) {
         this.publicKey = KeyFactory.getInstance("RSA").generatePublic(RSAPublicKeySpec(privateKey.modulus, RSAKeyGenParameterSpec.F4)) as RSAPublicKey
 
         val signer = JcaContentSignerBuilder("SHA256withRSA").build(privateKey)
-        val x509Certificate = X509v3CertificateBuilder(X500Name("CN=00"),
-                BigInteger.ONE,
-                Date(0),
-                Date(2461449600 * 1000),
-                Locale.ROOT,
-                X500Name("CN=00"),
-                SubjectPublicKeyInfo.getInstance(publicKey.encoded)
+        val x509Certificate = X509v3CertificateBuilder(
+            X500Name("CN=00"),
+            BigInteger.ONE,
+            Date(0),
+            Date(2461449600 * 1000),
+            Locale.ROOT,
+            X500Name("CN=00"),
+            SubjectPublicKeyInfo.getInstance(publicKey.encoded),
         ).build(signer)
         this.certificate = CertificateFactory.getInstance("X.509")
-                .generateCertificate(ByteArrayInputStream(x509Certificate.encoded)) as X509Certificate
+            .generateCertificate(ByteArrayInputStream(x509Certificate.encoded)) as X509Certificate
 
         Log.d(TAG, privateKey.toString())
     }
@@ -108,10 +117,10 @@ class AdbKey(private val adbKeyStore: AdbKeyStore, name: String) {
 
         return keyStore.getKey(ENCRYPTION_KEY_ALIAS, null) ?: run {
             val parameterSpec = KeyGenParameterSpec.Builder(ENCRYPTION_KEY_ALIAS, KeyProperties.PURPOSE_DECRYPT or KeyProperties.PURPOSE_ENCRYPT)
-                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                    .setKeySize(256)
-                    .build()
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .build()
             val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
             keyGenerator.init(parameterSpec)
             keyGenerator.generateKey()
@@ -201,19 +210,12 @@ class AdbKey(private val adbKeyStore: AdbKeyStore, name: String) {
                 return if (alias == this.alias) privateKey else null
             }
 
-            override fun getClientAliases(keyType: String?, issuers: Array<out Principal>?): Array<String>? {
-                return null
-            }
+            override fun getClientAliases(keyType: String?, issuers: Array<out Principal>?): Array<String>? = null
 
-            override fun getServerAliases(keyType: String, issuers: Array<out Principal>?): Array<String>? {
-                return null
-            }
+            override fun getServerAliases(keyType: String, issuers: Array<out Principal>?): Array<String>? = null
 
-            override fun chooseServerAlias(keyType: String, issuers: Array<out Principal>?, socket: Socket?): String? {
-                return null
-            }
+            override fun chooseServerAlias(keyType: String, issuers: Array<out Principal>?, socket: Socket?): String? = null
         }
-
 
     private val trustManager
         get() =
@@ -244,9 +246,7 @@ class AdbKey(private val adbKeyStore: AdbKeyStore, name: String) {
                 override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
                 }
 
-                override fun getAcceptedIssuers(): Array<X509Certificate> {
-                    return emptyArray()
-                }
+                override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
             }
 
     @delegate:RequiresApi(Build.VERSION_CODES.R)
@@ -280,7 +280,7 @@ class PreferenceAdbKeyStore(private val preference: SharedPreferences) : AdbKeyS
 
 const val ANDROID_PUBKEY_MODULUS_SIZE = 2048 / 8
 const val ANDROID_PUBKEY_MODULUS_SIZE_WORDS = ANDROID_PUBKEY_MODULUS_SIZE / 4
-const val RSAPublicKey_Size = 524
+const val RSA_PUBLIC_KEY_SIZE = 524
 
 private fun BigInteger.toAdbEncoded(): IntArray {
     // little-endian integer with padding zeros in the end
@@ -308,14 +308,14 @@ private fun RSAPublicKey.adbEncoded(name: String): ByteArray {
         uint8_t rr[ANDROID_PUBKEY_MODULUS_SIZE]; // rr = (2^(rsa_size)) ^ 2 mod N
         uint32_t exponent;
     } RSAPublicKey;
-    */
+     */
 
     val r32 = BigInteger.ZERO.setBit(32)
     val n0inv = modulus.remainder(r32).modInverse(r32).negate()
     val r = BigInteger.ZERO.setBit(ANDROID_PUBKEY_MODULUS_SIZE * 8)
     val rr = r.modPow(BigInteger.valueOf(2), modulus)
 
-    val buffer = ByteBuffer.allocate(RSAPublicKey_Size).order(ByteOrder.LITTLE_ENDIAN)
+    val buffer = ByteBuffer.allocate(RSA_PUBLIC_KEY_SIZE).order(ByteOrder.LITTLE_ENDIAN)
     buffer.putInt(ANDROID_PUBKEY_MODULUS_SIZE_WORDS)
     buffer.putInt(n0inv.toInt())
     modulus.toAdbEncoded().forEach { buffer.putInt(it) }

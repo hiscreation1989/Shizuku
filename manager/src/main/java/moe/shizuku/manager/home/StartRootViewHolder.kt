@@ -16,8 +16,7 @@ import rikka.html.text.HtmlCompat
 import rikka.recyclerview.BaseViewHolder
 import rikka.recyclerview.BaseViewHolder.Creator
 
-class StartRootViewHolder(private val binding: HomeStartRootBinding, root: View) :
-    BaseViewHolder<Boolean>(root) {
+class StartRootViewHolder(private val binding: HomeStartRootBinding, root: View) : BaseViewHolder<Boolean>(root) {
 
     companion object {
         val CREATOR = Creator<Boolean> { inflater: LayoutInflater, parent: ViewGroup? ->
@@ -63,8 +62,8 @@ class StartRootViewHolder(private val binding: HomeStartRootBinding, root: View)
                 context.getString(
                     R.string.home_root_description,
                     "<b><a href=\"${Helps.SUI.get()}\">Sui</a></b>",
-                    "Sui"
-                )
+                    "Sui",
+                ),
             )
 
         binding.text1.text = sb.toHtml(HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE)

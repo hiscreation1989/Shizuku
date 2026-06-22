@@ -4,14 +4,14 @@ import android.Manifest.permission.WRITE_SECURE_SETTINGS
 import android.content.pm.PackageManager
 import android.provider.Settings
 import android.util.Log
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import moe.shizuku.manager.ShizukuApplication
 import moe.shizuku.manager.ShizukuSettings
 import rikka.shizuku.Shizuku
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicReference
 
 private val appContext = ShizukuApplication.appContext
 
@@ -24,10 +24,10 @@ object ShizukuStateMachine {
 
     init {
         Shizuku.addBinderReceivedListenerSticky(
-            Shizuku.OnBinderReceivedListener { set(State.RUNNING) }
+            Shizuku.OnBinderReceivedListener { set(State.RUNNING) },
         )
         Shizuku.addBinderDeadListener(
-            Shizuku.OnBinderDeadListener { setDead() }
+            Shizuku.OnBinderDeadListener { setDead() },
         )
     }
 
@@ -36,7 +36,7 @@ object ShizukuStateMachine {
     private fun transition(transform: (State) -> State) {
         val oldState = state.getAndUpdate(transform)
         val newState = transform(oldState)
-        if(oldState != newState) {
+        if (oldState != newState) {
             listeners.forEach { it(newState) }
             Log.d("ShizukuStateMachine", newState.toString())
         }
@@ -47,6 +47,7 @@ object ShizukuStateMachine {
     fun setDead() = transition {
         when (it) {
             State.RUNNING -> State.CRASHED
+
             State.STOPPING -> {
                 try {
                     val permissionGranted = appContext.checkSelfPermission(WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED
@@ -59,6 +60,7 @@ object ShizukuStateMachine {
                 }
                 State.STOPPED
             }
+
             else -> it
         }
     }
@@ -69,13 +71,9 @@ object ShizukuStateMachine {
         return state
     }
 
-    fun isRunning(): Boolean {
-        return get() == State.RUNNING
-    }
+    fun isRunning(): Boolean = get() == State.RUNNING
 
-    fun isDead(): Boolean {
-        return (get() == State.STOPPED || get() == State.CRASHED) 
-    }
+    fun isDead(): Boolean = (get() == State.STOPPED || get() == State.CRASHED)
 
     fun addListener(listener: (State) -> Unit) {
         listeners.add(listener)
@@ -91,5 +89,4 @@ object ShizukuStateMachine {
         addListener(listener)
         awaitClose { removeListener(listener) }
     }
-
 }

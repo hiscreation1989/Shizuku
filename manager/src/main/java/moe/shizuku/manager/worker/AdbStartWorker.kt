@@ -5,29 +5,29 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.database.ContentObserver
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
-import androidx.lifecycle.asFlow
-import androidx.work.*
-import java.io.EOFException
-import java.util.concurrent.TimeoutException
+import androidx.work.Constraints
+import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.ForegroundInfo
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbMdns
@@ -39,13 +39,15 @@ import moe.shizuku.manager.settings.BugReportDialogActivity
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.ShizukuStateMachine
+import java.io.EOFException
+import java.util.concurrent.TimeoutException
 
 class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         try {
             updateNotification(
                 applicationContext,
-                WorkerState.RUNNING
+                WorkerState.RUNNING,
             )
 
             val cr = applicationContext.contentResolver
@@ -59,6 +61,11 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
             }
 
             val port = tcpPort.takeIf { !EnvironmentUtils.isWifiRequired() } ?: callbackFlow {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    close(UnsupportedOperationException("Wireless debugging requires Android 11+"))
+                    return@callbackFlow
+                }
+
                 val adbMdns = AdbMdns(applicationContext, AdbMdns.TLS_CONNECT) { p ->
                     if (p > 0) trySend(p)
                 }
@@ -81,11 +88,11 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     if (km.isKeyguardLocked) {
                         val notification = ShizukuReceiverStarter.buildNotification(
                             applicationContext,
-                            null
+                            null,
                         )
                         val foregroundInfo = ForegroundInfo(
                             ShizukuReceiverStarter.NOTIFICATION_ID,
-                            notification
+                            notification,
                         )
                         setForegroundAsync(foregroundInfo)
 
@@ -100,7 +107,9 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                             }
                         }
                         applicationContext.registerReceiver(unlockReceiver, filter)
-                    } else awaitingAuth = true
+                    } else {
+                        awaitingAuth = true
+                    }
                     timeoutJob?.cancel()
                     adbMdns.stop()
                 }
@@ -110,7 +119,10 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         when (Settings.Global.getInt(cr, "adb_wifi_enabled", 0)) {
                             0 -> if (awaitingAuth) {
                                 close(SecurityException("Network is not authorized for wireless debugging"))
-                            } else handleAuth()
+                            } else {
+                                handleAuth()
+                            }
+
                             1 -> startDiscoveryWithTimeout()
                         }
                     }
@@ -127,7 +139,7 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     unlockReceiver?.let { applicationContext.unregisterReceiver(it) }
                 }
             }.first()
-            
+
             AdbStarter.startAdb(applicationContext, port)
             Starter.waitForBinder()
 
@@ -152,7 +164,7 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
             val ignored = listOf(
                 EOFException::class,
                 SecurityException::class,
-                TimeoutException::class
+                TimeoutException::class,
             )
             if (ignored.none { it.isInstance(e) }) showErrorNotification(applicationContext, e)
 
@@ -161,7 +173,7 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
             } else {
                 updateNotification(
                     applicationContext,
-                    WorkerState.AWAITING_RETRY
+                    WorkerState.AWAITING_RETRY,
                 )
                 return Result.retry()
             }
@@ -169,13 +181,15 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
     }
 
     private fun showErrorNotification(context: Context, e: Exception) {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.wadb_notification_title),
-            NotificationManager.IMPORTANCE_LOW
-        )
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                context.getString(R.string.wadb_notification_title),
+                NotificationManager.IMPORTANCE_LOW,
+            )
+            nm.createNotificationChannel(channel)
+        }
 
         val nb = NotificationCompat.Builder(context, CHANNEL_ID)
 
@@ -185,8 +199,10 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val notification = nb
@@ -204,8 +220,9 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
     companion object {
         fun enqueue(context: Context) {
             val cb = Constraints.Builder()
-            if (EnvironmentUtils.isWifiRequired())
+            if (EnvironmentUtils.isWifiRequired()) {
                 cb.setRequiredNetworkType(NetworkType.UNMETERED)
+            }
             val constraints = cb.build()
 
             val request = OneTimeWorkRequestBuilder<AdbStartWorker>()
@@ -215,7 +232,7 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
             WorkManager.getInstance(context).enqueueUniqueWork(
                 "adb_start_worker",
                 ExistingWorkPolicy.REPLACE,
-                request
+                request,
             )
         }
         const val CHANNEL_ID = "AdbStartWorker"

@@ -3,11 +3,8 @@ package moe.shizuku.manager.home
 import android.annotation.SuppressLint
 import android.app.Application
 import android.app.Dialog
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
-import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.widget.Toast
@@ -21,16 +18,20 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
-import moe.shizuku.manager.adb.*
+import moe.shizuku.manager.adb.AdbInvalidPairingCodeException
+import moe.shizuku.manager.adb.AdbKey
+import moe.shizuku.manager.adb.AdbKeyException
+import moe.shizuku.manager.adb.AdbMdns
+import moe.shizuku.manager.adb.AdbPairingClient
+import moe.shizuku.manager.adb.PreferenceAdbKeyStore
 import moe.shizuku.manager.databinding.AdbPairDialogBinding
 import moe.shizuku.manager.utils.SettingsHelper
-import moe.shizuku.manager.utils.SettingsPage
 import java.net.ConnectException
 
 @RequiresApi(VERSION_CODES.R)
@@ -107,12 +108,16 @@ class AdbPairDialogFragment : DialogFragment() {
         }
     }
 
+    @Deprecated("Uses deprecated Fragment callback for current dialog lifecycle")
+    @Suppress("DEPRECATION")
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
         val context = requireContext()
-        val inMultiScreenOrDisplay = (requireActivity().isInMultiWindowMode
-                || (requireActivity().window?.decorView?.display?.displayId ?: -1) > 0)
+        val inMultiScreenOrDisplay = (
+            requireActivity().isInMultiWindowMode ||
+                (requireActivity().window?.decorView?.display?.displayId ?: -1) > 0
+            )
 
         binding.text1.isVisible = inMultiScreenOrDisplay
         binding.text2.isVisible = !inMultiScreenOrDisplay
@@ -131,9 +136,11 @@ class AdbPairDialogFragment : DialogFragment() {
                     is ConnectException -> {
                         binding.port.error = context.getString(R.string.cannot_connect_port)
                     }
+
                     is AdbInvalidPairingCodeException -> {
                         binding.pairingCode.error = context.getString(R.string.paring_code_is_wrong)
                     }
+
                     is AdbKeyException -> {
                         Toast.makeText(context, context.getString(R.string.adb_error_key_store), Toast.LENGTH_LONG)
                             .apply { setGravity(Gravity.CENTER, 0, 0) }.show()
@@ -148,9 +155,7 @@ class AdbPairDialogFragment : DialogFragment() {
         show(fragmentManager, javaClass.simpleName)
     }
 
-    override fun getDialog(): AlertDialog? {
-        return super.getDialog() as AlertDialog?
-    }
+    override fun getDialog(): AlertDialog? = super.getDialog() as AlertDialog?
 }
 
 @SuppressLint("NewApi")
@@ -173,7 +178,7 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun run(port: Int, password: String) {
-        GlobalScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             val host = "127.0.0.1"
 
             val key = try {

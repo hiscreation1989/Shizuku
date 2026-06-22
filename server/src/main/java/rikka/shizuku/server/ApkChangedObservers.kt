@@ -3,7 +3,9 @@ package rikka.shizuku.server
 import android.os.FileObserver
 import android.util.Log
 import java.io.File
-import java.util.*
+import java.util.ArrayList
+import java.util.Collections
+import java.util.HashMap
 
 interface ApkChangedListener {
     fun onApkChanged()
@@ -45,26 +47,22 @@ object ApkChangedObservers {
     }
 }
 
+@Suppress("DEPRECATION")
 class ApkChangedObserver(private val path: String) : FileObserver(path, DELETE) {
 
     private val listeners = mutableSetOf<ApkChangedListener>()
 
-    fun addListener(listener: ApkChangedListener): Boolean {
-        return listeners.add(listener)
-    }
+    fun addListener(listener: ApkChangedListener): Boolean = listeners.add(listener)
 
-    fun removeListener(listener: ApkChangedListener): Boolean {
-        return listeners.remove(listener)
-    }
+    fun removeListener(listener: ApkChangedListener): Boolean = listeners.remove(listener)
 
-    fun hasListeners(): Boolean {
-        return listeners.isNotEmpty()
-    }
+    fun hasListeners(): Boolean = listeners.isNotEmpty()
 
     override fun onEvent(event: Int, path: String?) {
         Log.d("ShizukuServer", "onEvent: ${eventToString(event)} $path")
 
-        if ((event and 0x00008000 /* IN_IGNORED */) != 0 || path == null) {
+        // FileObserver reports IN_IGNORED when the watched path becomes invalid.
+        if ((event and 0x00008000) != 0 || path == null) {
             return
         }
 

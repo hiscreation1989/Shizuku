@@ -3,11 +3,8 @@ package moe.shizuku.manager.adb
 import android.app.AppOpsManager
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.NotificationManager
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -32,7 +29,7 @@ class AdbPairingTutorialActivity : AppBarActivity() {
         val context = this
 
         binding = AdbPairingTutorialActivityBinding.inflate(layoutInflater, rootView, true)
-        
+
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         notificationEnabled = isNotificationEnabled()
@@ -75,7 +72,7 @@ class AdbPairingTutorialActivity : AppBarActivity() {
         val nm = context.getSystemService(NotificationManager::class.java)
         val channel = nm.getNotificationChannel(AdbPairingService.NOTIFICATION_CHANNEL)
         return nm.areNotificationsEnabled() &&
-                (channel == null || channel.importance != NotificationManager.IMPORTANCE_NONE)
+            (channel == null || channel.importance != NotificationManager.IMPORTANCE_NONE)
     }
 
     override fun onResume() {
@@ -99,8 +96,8 @@ class AdbPairingTutorialActivity : AppBarActivity() {
         } catch (e: Throwable) {
             Log.e(AppConstants.TAG, "startForegroundService", e)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                && e is ForegroundServiceStartNotAllowedException
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                e is ForegroundServiceStartNotAllowedException
             ) {
                 val mode = getSystemService(AppOpsManager::class.java)
                     .noteOpNoThrow("android:start_foreground", android.os.Process.myUid(), packageName, null, null)

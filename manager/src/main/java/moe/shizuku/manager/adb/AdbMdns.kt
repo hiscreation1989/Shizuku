@@ -16,8 +16,9 @@ import java.net.ServerSocket
 
 @RequiresApi(Build.VERSION_CODES.R)
 class AdbMdns(
-    context: Context, private val serviceType: String,
-    private val observer: Observer<Int>
+    context: Context,
+    private val serviceType: String,
+    private val observer: Observer<Int>,
 ) {
 
     private var registered = false
@@ -54,6 +55,7 @@ class AdbMdns(
         registered = false
     }
 
+    @Suppress("DEPRECATION")
     private fun onServiceFound(info: NsdServiceInfo) {
         nsdManager.resolveService(info, ResolveListener(this))
     }
@@ -62,15 +64,17 @@ class AdbMdns(
         if (info.serviceName == serviceName) observer.onChanged(-1)
     }
 
+    @Suppress("DEPRECATION")
     private fun onServiceResolved(resolvedService: NsdServiceInfo) {
-        if (running && NetworkInterface.getNetworkInterfaces()
+        if (running &&
+            NetworkInterface.getNetworkInterfaces()
                 .asSequence()
                 .any { networkInterface ->
                     networkInterface.inetAddresses
                         .asSequence()
                         .any { resolvedService.host.hostAddress == it.hostAddress }
-                }
-            && isPortAvailable(resolvedService.port)
+                } &&
+            isPortAvailable(resolvedService.port)
         ) {
             serviceName = resolvedService.serviceName
             observer.onChanged(resolvedService.port)
@@ -137,7 +141,6 @@ class AdbMdns(
         override fun onServiceResolved(nsdServiceInfo: NsdServiceInfo) {
             adbMdns.onServiceResolved(nsdServiceInfo)
         }
-
     }
 
     companion object {

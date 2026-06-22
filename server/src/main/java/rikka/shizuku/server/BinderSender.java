@@ -11,12 +11,8 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.RemoteException;
 import android.text.TextUtils;
-
-import androidx.annotation.RequiresApi;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import kotlin.collections.ArraysKt;
 import rikka.hidden.compat.ActivityManagerApis;
 import rikka.hidden.compat.PackageManagerApis;
@@ -39,8 +35,11 @@ public class BinderSender {
         private static final List<Integer> PID_LIST = new ArrayList<>();
 
         @Override
-        public void onForegroundActivitiesChanged(int pid, int uid, boolean foregroundActivities) throws RemoteException {
-            LOGGER.d("onForegroundActivitiesChanged: pid=%d, uid=%d, foregroundActivities=%s", pid, uid, foregroundActivities ? "true" : "false");
+        public void onForegroundActivitiesChanged(int pid, int uid, boolean foregroundActivities)
+                throws RemoteException {
+            LOGGER.d(
+                    "onForegroundActivitiesChanged: pid=%d, uid=%d, foregroundActivities=%s",
+                    pid, uid, foregroundActivities ? "true" : "false");
 
             synchronized (PID_LIST) {
                 if (PID_LIST.contains(pid) || !foregroundActivities) {
@@ -79,7 +78,6 @@ public class BinderSender {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     private static class UidObserver extends UidObserverAdapter {
 
         private static final List<Integer> UID_LIST = new ArrayList<>();
@@ -140,23 +138,24 @@ public class BinderSender {
 
     private static void sendBinder(int uid, int pid) throws RemoteException {
         List<String> packages = PackageManagerApis.getPackagesForUidNoThrow(uid);
-        if (packages.isEmpty())
-            return;
+        if (packages.isEmpty()) return;
 
         LOGGER.d("sendBinder to uid %d: packages=%s", uid, TextUtils.join(", ", packages));
 
         int userId = uid / 100000;
         for (String packageName : packages) {
-            PackageInfo pi = PackageManagerApis.getPackageInfoNoThrow(packageName, PackageManager.GET_PERMISSIONS, userId);
-            if (pi == null || pi.requestedPermissions == null)
-                continue;
+            PackageInfo pi =
+                    PackageManagerApis.getPackageInfoNoThrow(packageName, PackageManager.GET_PERMISSIONS, userId);
+            if (pi == null || pi.requestedPermissions == null) continue;
 
             if (ArraysKt.contains(pi.requestedPermissions, PERMISSION_MANAGER)) {
                 boolean granted;
                 if (pid == -1)
-                    granted = PermissionManagerApis.checkPermission(PERMISSION_MANAGER, uid) == PackageManager.PERMISSION_GRANTED;
+                    granted = PermissionManagerApis.checkPermission(PERMISSION_MANAGER, uid)
+                            == PackageManager.PERMISSION_GRANTED;
                 else
-                    granted = ActivityManagerApis.checkPermission(PERMISSION_MANAGER, pid, uid) == PackageManager.PERMISSION_GRANTED;
+                    granted = ActivityManagerApis.checkPermission(PERMISSION_MANAGER, pid, uid)
+                            == PackageManager.PERMISSION_GRANTED;
 
                 if (granted) {
                     ShizukuService.sendBinderToManager(sShizukuService, userId);
@@ -184,9 +183,8 @@ public class BinderSender {
                 flags |= UID_OBSERVER_CACHED;
             }
             try {
-                ActivityManagerApis.registerUidObserver(new UidObserver(), flags,
-                        ActivityManagerHidden.PROCESS_STATE_UNKNOWN,
-                        null);
+                ActivityManagerApis.registerUidObserver(
+                        new UidObserver(), flags, ActivityManagerHidden.PROCESS_STATE_UNKNOWN, null);
             } catch (Throwable tr) {
                 LOGGER.e(tr, "registerUidObserver");
             }

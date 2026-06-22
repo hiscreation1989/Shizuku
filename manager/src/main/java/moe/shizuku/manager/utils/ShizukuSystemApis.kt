@@ -23,15 +23,17 @@ object ShizukuSystemApis {
     private fun getUsers(): List<UserInfoCompat> {
         return if (!ShizukuStateMachine.isRunning()) {
             arrayListOf(UserInfoCompat(UserHandleCompat.myUserId(), "Owner"))
-        } else try {
-            val list = UserManagerApis.getUsers(true, true, true)
-            val users: MutableList<UserInfoCompat> = ArrayList<UserInfoCompat>()
-            for (ui in list) {
-                users.add(UserInfoCompat(ui.id, ui.name))
+        } else {
+            try {
+                val list = UserManagerApis.getUsers(true, true, true)
+                val users: MutableList<UserInfoCompat> = ArrayList<UserInfoCompat>()
+                for (ui in list) {
+                    users.add(UserInfoCompat(ui.id, ui.name))
+                }
+                return users
+            } catch (tr: Throwable) {
+                arrayListOf(UserInfoCompat(UserHandleCompat.myUserId(), "Owner"))
             }
-            return users
-        } catch (tr: Throwable) {
-            arrayListOf(UserInfoCompat(UserHandleCompat.myUserId(), "Owner"))
         }
     }
 
@@ -45,34 +47,36 @@ object ShizukuSystemApis {
         }
     }
 
-    fun getUserInfo(userId: Int): UserInfoCompat {
-        return getUsers(useCache = true).firstOrNull { it.id == userId } ?: UserInfoCompat(
-            UserHandleCompat.myUserId(),
-            "Unknown"
-        )
-    }
+    fun getUserInfo(userId: Int): UserInfoCompat = getUsers(useCache = true).firstOrNull { it.id == userId } ?: UserInfoCompat(
+        UserHandleCompat.myUserId(),
+        "Unknown",
+    )
 
     fun getInstalledPackages(flags: Long, userId: Int): List<PackageInfo> {
         return if (!ShizukuStateMachine.isRunning()) {
             ArrayList()
-        } else try {
-            val listSlice: ParceledListSlice<PackageInfo>? =
-                PackageManagerApis.getInstalledPackages(
-                    flags,
-                    userId
-                )
-            return if (listSlice != null) {
-                listSlice.list
-            } else ArrayList()
-        } catch (tr: RemoteException) {
-            throw RuntimeException(tr.message, tr)
+        } else {
+            try {
+                val listSlice: ParceledListSlice<PackageInfo>? =
+                    PackageManagerApis.getInstalledPackages(
+                        flags,
+                        userId,
+                    )
+                return if (listSlice != null) {
+                    listSlice.list
+                } else {
+                    ArrayList()
+                }
+            } catch (tr: RemoteException) {
+                throw RuntimeException(tr.message, tr)
+            }
         }
     }
 
-    fun checkPermission(permName: String, pkgName: String, userId: Int): Int {
-        return if (!ShizukuStateMachine.isRunning()) {
-            PackageManager.PERMISSION_DENIED
-        } else try {
+    fun checkPermission(permName: String, pkgName: String, userId: Int): Int = if (!ShizukuStateMachine.isRunning()) {
+        PackageManager.PERMISSION_DENIED
+    } else {
+        try {
             PermissionManagerApis.checkPermission(permName, pkgName, userId)
         } catch (tr: RemoteException) {
             throw RuntimeException(tr.message, tr)

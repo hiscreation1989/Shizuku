@@ -7,10 +7,10 @@ import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Manifest
 import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.utils.ShizukuSystemApis
-import rikka.shizuku.server.ServerConstants
 import rikka.parcelablelist.ParcelableListSlice
 import rikka.shizuku.Shizuku
-import java.util.*
+import rikka.shizuku.server.ServerConstants
+import java.util.ArrayList
 
 object AuthorizationManager {
 
@@ -62,12 +62,10 @@ object AuthorizationManager {
         return packages
     }
 
-    fun granted(packageName: String, uid: Int): Boolean {
-        return if (Shizuku.isPreV11()) {
-            ShizukuSystemApis.checkPermission(Manifest.permission.API_V23, packageName, uid / 100000) == PackageManager.PERMISSION_GRANTED
-        } else {
-            (Shizuku.getFlagsForUid(uid, MASK_PERMISSION) and FLAG_ALLOWED) == FLAG_ALLOWED
-        }
+    fun granted(packageName: String, uid: Int): Boolean = if (Shizuku.isPreV11()) {
+        ShizukuSystemApis.checkPermission(Manifest.permission.API_V23, packageName, uid / 100000) == PackageManager.PERMISSION_GRANTED
+    } else {
+        (Shizuku.getFlagsForUid(uid, MASK_PERMISSION) and FLAG_ALLOWED) == FLAG_ALLOWED
     }
 
     fun grant(packageName: String, uid: Int) {

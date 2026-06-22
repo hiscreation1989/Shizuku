@@ -7,12 +7,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Process
 import android.text.method.LinkMovementMethod
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -23,15 +21,12 @@ import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.app.SnackbarHelper
 import moe.shizuku.manager.databinding.AboutDialogBinding
 import moe.shizuku.manager.databinding.HomeActivityBinding
-import moe.shizuku.manager.home.showAccessibilityDialog
 import moe.shizuku.manager.ktx.toHtml
 import moe.shizuku.manager.management.AppsViewModel
 import moe.shizuku.manager.settings.SettingsActivity
 import moe.shizuku.manager.utils.AppIconCache
-import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.SettingsHelper
 import moe.shizuku.manager.utils.ShizukuStateMachine
-import rikka.core.content.asActivity
 import rikka.core.ktx.unsafeLazy
 import rikka.lifecycle.Status
 import rikka.recyclerview.addEdgeSpacing
@@ -75,7 +70,7 @@ abstract class HomeActivity : AppBarActivity() {
                     msg = getString(R.string.snackbar_battery_optimization_home),
                     duration = Snackbar.LENGTH_INDEFINITE,
                     actionText = getString(R.string.snackbar_action_fix),
-                    action = { SettingsHelper.requestIgnoreBatteryOptimizations(this, null) }
+                    action = { SettingsHelper.requestIgnoreBatteryOptimizations(this, null) },
                 )
             }
         }
@@ -145,60 +140,60 @@ abstract class HomeActivity : AppBarActivity() {
         return true
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_about -> {
-                val binding = AboutDialogBinding.inflate(LayoutInflater.from(this), null, false)
-                binding.sourceCode.movementMethod = LinkMovementMethod.getInstance()
-                binding.sourceCode.text = getString(
-                    R.string.about_view_source_code,
-                    "<b><a href=\"https://github.com/thedjchi/Shizuku\">GitHub</a></b>"
-                ).toHtml()
-                binding.icon.setImageBitmap(
-                    AppIconCache.getOrLoadBitmap(
-                        this,
-                        applicationInfo,
-                        Process.myUid() / 100000,
-                        resources.getDimensionPixelOffset(R.dimen.default_app_icon_size)
-                    )
-                )
-                binding.versionName.text = packageManager.getPackageInfo(packageName, 0).versionName
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.action_about -> {
+            val binding = AboutDialogBinding.inflate(LayoutInflater.from(this), null, false)
+            binding.sourceCode.movementMethod = LinkMovementMethod.getInstance()
+            binding.sourceCode.text = getString(
+                R.string.about_view_source_code,
+                "<b><a href=\"https://github.com/thedjchi/Shizuku\">GitHub</a></b>",
+            ).toHtml()
+            binding.icon.setImageBitmap(
+                AppIconCache.getOrLoadBitmap(
+                    this,
+                    applicationInfo,
+                    Process.myUid() / 100000,
+                    resources.getDimensionPixelOffset(R.dimen.default_app_icon_size),
+                ),
+            )
+            binding.versionName.text = packageManager.getPackageInfo(packageName, 0).versionName
 
-                val dialog = MaterialAlertDialogBuilder(this)
-                    .setView(binding.root)
-                    .create()
+            val dialog = MaterialAlertDialogBuilder(this)
+                .setView(binding.root)
+                .create()
 
-                binding.btnClose.setOnClickListener {
-                    dialog.dismiss()
-                }
-                
-                dialog.show()
-                true
+            binding.btnClose.setOnClickListener {
+                dialog.dismiss()
             }
-            R.id.action_stop -> {
-                if (ShizukuStateMachine.isRunning()) {
-                    MaterialAlertDialogBuilder(this)
-                        .setMessage(R.string.dialog_stop_message)
-                        .setPositiveButton(android.R.string.ok) { _: DialogInterface?, _: Int ->
-                            ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
-                            runCatching { Shizuku.exit() }
-                        }
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .show()
-                }
-                true
-            }
-            R.id.action_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
+
+            dialog.show()
+            true
         }
+
+        R.id.action_stop -> {
+            if (ShizukuStateMachine.isRunning()) {
+                MaterialAlertDialogBuilder(this)
+                    .setMessage(R.string.dialog_stop_message)
+                    .setPositiveButton(android.R.string.ok) { _: DialogInterface?, _: Int ->
+                        ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
+                        runCatching { Shizuku.exit() }
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            }
+            true
+        }
+
+        R.id.action_settings -> {
+            startActivity(Intent(this, SettingsActivity::class.java))
+            true
+        }
+
+        else -> super.onOptionsItemSelected(item)
     }
 
     companion object {
         const val EXTRA_SHOW_PAIRING_DIALOG = "show_pairing_dialog"
         const val EXTRA_START_SERVICE_VIA_WADB = "start_service_via_wadb"
     }
-
 }

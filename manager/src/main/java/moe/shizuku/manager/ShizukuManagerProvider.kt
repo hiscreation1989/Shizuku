@@ -1,14 +1,13 @@
 package moe.shizuku.manager
 
+import android.os.Build
 import android.os.Bundle
-import androidx.core.os.bundleOf
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.TimeoutCancellationException
 import moe.shizuku.api.BinderContainer
 import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.utils.ShizukuStateMachine
@@ -37,7 +36,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
                 extras.classLoader = BinderContainer::class.java.classLoader
 
                 val token = extras.getString(USER_SERVICE_ARG_TOKEN) ?: return null
-                val binder = extras.getParcelable<BinderContainer>(EXTRA_BINDER)?.binder ?: return null
+                val binder = getBinderContainer(extras)?.binder ?: return null
 
                 return runBlocking {
                     try {
@@ -46,8 +45,11 @@ class ShizukuManagerProvider : ShizukuProvider() {
                             withContext(workerHandler.asCoroutineDispatcher()) {
                                 try {
                                     val reply = Bundle()
-                                    Shizuku.attachUserService(binder, bundleOf(USER_SERVICE_ARG_TOKEN to token))
-                                    reply!!.putParcelable(EXTRA_BINDER, BinderContainer(Shizuku.getBinder()))
+                                    val args = Bundle().apply {
+                                        putString(USER_SERVICE_ARG_TOKEN, token)
+                                    }
+                                    Shizuku.attachUserService(binder, args)
+                                    reply.putParcelable(EXTRA_BINDER, BinderContainer(Shizuku.getBinder()))
                                     reply
                                 } catch (e: Throwable) {
                                     LOGGER.e(e, "attachUserService $token")
@@ -67,5 +69,12 @@ class ShizukuManagerProvider : ShizukuProvider() {
         } else {
             super.call(method, arg, extras)
         }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun getBinderContainer(bundle: Bundle): BinderContainer? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        bundle.getParcelable(EXTRA_BINDER, BinderContainer::class.java)
+    } else {
+        bundle.getParcelable(EXTRA_BINDER)
     }
 }

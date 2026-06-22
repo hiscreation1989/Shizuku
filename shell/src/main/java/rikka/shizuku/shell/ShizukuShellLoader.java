@@ -14,11 +14,9 @@ import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.system.Os;
 import android.text.TextUtils;
-
+import dalvik.system.BaseDexClassLoader;
 import java.io.File;
 import java.util.Objects;
-
-import dalvik.system.BaseDexClassLoader;
 import rikka.hidden.compat.PackageManagerApis;
 import stub.dalvik.system.VMRuntimeHidden;
 
@@ -72,8 +70,7 @@ public class ShizukuShellLoader {
         //  com.android.server.am.ActivityManagerService.broadcastIntent(ActivityManagerService.java:19703)
         //
         try {
-            am.broadcastIntent(null, intent, null, null, 0, null, null,
-                    null, -1, null, true, false, 0);
+            am.broadcastIntent(null, intent, null, null, 0, null, null, null, -1, null, true, false, 0);
         } catch (Throwable e) {
             if ((Build.VERSION.SDK_INT != Build.VERSION_CODES.O && Build.VERSION.SDK_INT != Build.VERSION_CODES.O_MR1)
                     || !Objects.equals(e.getMessage(), "Calling application did not provide package name")) {
@@ -89,10 +86,10 @@ public class ShizukuShellLoader {
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
                             .putExtra("data", data),
-                    "Request binder from Shizuku"
-            );
+                    "Request binder from Shizuku");
 
-            am.startActivityAsUser(null, callingPackage, activityIntent, null, null, null, 0, 0, null, null, Os.getuid() / 100000);
+            am.startActivityAsUser(
+                    null, callingPackage, activityIntent, null, null, null, 0, 0, null, null, Os.getuid() / 100000);
         }
     }
 
@@ -105,7 +102,8 @@ public class ShizukuShellLoader {
         }
 
         try {
-            var classLoader = new BaseDexClassLoader(sourceDir, null, librarySearchPath, ClassLoader.getSystemClassLoader());
+            var classLoader =
+                    new BaseDexClassLoader(sourceDir, null, librarySearchPath, ClassLoader.getSystemClassLoader());
             Class<?> cls = classLoader.loadClass("moe.shizuku.manager.shell.Shell");
             cls.getDeclaredMethod("main", String[].class, String.class, IBinder.class, Handler.class)
                     .invoke(null, args, callingPackage, binder, handler);
@@ -121,6 +119,7 @@ public class ShizukuShellLoader {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public static void main(String[] args) {
         ShizukuShellLoader.args = args;
 
@@ -131,7 +130,8 @@ public class ShizukuShellLoader {
         } else {
             packageName = System.getenv("RISH_APPLICATION_ID");
             if (TextUtils.isEmpty(packageName) || "PKG".equals(packageName)) {
-                abort("RISH_APPLICATION_ID is not set, set this environment variable to the id of current application (package name)");
+                abort(
+                        "RISH_APPLICATION_ID is not set, set this environment variable to the id of current application (package name)");
                 System.exit(1);
             }
         }
@@ -152,12 +152,12 @@ public class ShizukuShellLoader {
             System.exit(1);
         }
 
-        handler.postDelayed(() -> abort(
-                String.format(
-                        "Request timeout. The connection between the current app (%1$s) and Shizuku app may be blocked by your system. " +
-                                "Please disable all battery optimization features for both current app (%1$s) and Shizuku app.",
-                        packageName)
-        ), 5000);
+        handler.postDelayed(
+                () -> abort(String.format(
+                        "Request timeout. The connection between the current app (%1$s) and Shizuku app may be blocked by your system. "
+                                + "Please disable all battery optimization features for both current app (%1$s) and Shizuku app.",
+                        packageName)),
+                5000);
 
         Looper.loop();
         System.exit(0);

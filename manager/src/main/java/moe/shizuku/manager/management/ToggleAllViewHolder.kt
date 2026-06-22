@@ -4,14 +4,15 @@ import android.content.pm.PackageInfo
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AlertDialog
 import moe.shizuku.manager.authorization.AuthorizationManager
 import moe.shizuku.manager.databinding.AppListToggleAllBinding
 import moe.shizuku.manager.management.AppsAdapter.HeaderMarker
 import rikka.recyclerview.BaseViewHolder
 import rikka.recyclerview.BaseViewHolder.Creator
 
-class ToggleAllViewHolder(private val binding: AppListToggleAllBinding) : BaseViewHolder<HeaderMarker>(binding.root), View.OnClickListener {
+class ToggleAllViewHolder(private val binding: AppListToggleAllBinding) :
+    BaseViewHolder<HeaderMarker>(binding.root),
+    View.OnClickListener {
 
     companion object {
         @JvmField

@@ -1,12 +1,9 @@
 package moe.shizuku.manager.management;
 
 import android.content.pm.PackageInfo;
-
 import java.util.List;
-
 import rikka.recyclerview.BaseRecyclerViewAdapter;
 import rikka.recyclerview.ClassCreatorPool;
-import moe.shizuku.manager.authorization.AuthorizationManager;
 
 public class AppsAdapter extends BaseRecyclerViewAdapter<ClassCreatorPool> {
 

@@ -8,7 +8,7 @@ class NotifRestoreReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         ShizukuReceiverStarter.updateNotification(
             context,
-            ShizukuReceiverStarter.WorkerState.RUNNING
+            ShizukuReceiverStarter.WorkerState.RUNNING,
         )
     }
 }

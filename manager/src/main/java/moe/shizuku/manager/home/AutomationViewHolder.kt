@@ -4,12 +4,11 @@ import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import android.widget.Toast
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
@@ -39,7 +38,7 @@ class AutomationViewHolder(
     private data class Field(
         val layout: TextInputLayout,
         val input: TextInputEditText,
-        val initText: String
+        val initText: String,
     )
 
     init {
@@ -48,7 +47,7 @@ class AutomationViewHolder(
             val authToken = ShizukuSettings.getAuthToken()
 
             val sheetBinding = HomeAutomationBottomSheetBinding.inflate(
-                LayoutInflater.from(context)
+                LayoutInflater.from(context),
             )
 
             sheetBinding.apply {
@@ -57,7 +56,7 @@ class AutomationViewHolder(
                     Field(actionLayout, actionEditText, action),
                     Field(packageLayout, packageEditText, context.packageName),
                     Field(targetLayout, targetEditText, "Broadcast Receiver"),
-                    Field(extrasLayout, extrasEditText, authToken)
+                    Field(extrasLayout, extrasEditText, authToken),
                 )
 
                 fields.forEach { (layout, input, initText) ->
@@ -90,7 +89,7 @@ class AutomationViewHolder(
                         .setTitle(R.string.home_automation_regenerate_token)
                         .setMessage(R.string.home_automation_regenerate_token_message)
                         .setNegativeButton(android.R.string.cancel, null)
-                        .setPositiveButton(android.R.string.ok, { _, _ -> 
+                        .setPositiveButton(android.R.string.ok, { _, _ ->
                             val authToken = ShizukuSettings.generateAuthToken()
                             extrasEditText.setText(authToken)
                         })
@@ -117,10 +116,9 @@ class AutomationViewHolder(
         }
     }
 
-    private fun getIntentAction(buttonId: Int): String =
-        when (buttonId) {
-            R.id.buttonStart -> "${BuildConfig.APPLICATION_ID}.START"
-            R.id.buttonStop -> "${BuildConfig.APPLICATION_ID}.STOP"
-            else -> ""
-        }
+    private fun getIntentAction(buttonId: Int): String = when (buttonId) {
+        R.id.buttonStart -> "${BuildConfig.APPLICATION_ID}.START"
+        R.id.buttonStop -> "${BuildConfig.APPLICATION_ID}.STOP"
+        else -> ""
+    }
 }

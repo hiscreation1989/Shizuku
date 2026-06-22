@@ -17,9 +17,7 @@ object Token {
     fun generateToken(): String = generateToken(DEFAULT_TOKEN_LENGTH)
 
     @JvmStatic
-    fun generateToken(length: Int): String =
-        (1..length)
-            .map { CHARS[random.nextInt(CHARS.length)] }
-            .joinToString("")
-            
+    fun generateToken(length: Int): String = (1..length)
+        .map { CHARS[random.nextInt(CHARS.length)] }
+        .joinToString("")
 }

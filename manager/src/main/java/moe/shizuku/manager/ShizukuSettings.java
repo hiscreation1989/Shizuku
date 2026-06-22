@@ -1,5 +1,7 @@
 package moe.shizuku.manager;
 
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -13,16 +15,16 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import java.lang.annotation.Retention;
 import java.util.Locale;
-import moe.shizuku.manager.service.WatchdogService;
 import moe.shizuku.manager.receiver.BootCompleteReceiver;
-import moe.shizuku.manager.utils.Token;
+import moe.shizuku.manager.service.WatchdogService;
 import moe.shizuku.manager.utils.EmptySharedPreferencesImpl;
 import moe.shizuku.manager.utils.EnvironmentUtils;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
+import moe.shizuku.manager.utils.Token;
 
 public class ShizukuSettings {
 
     public static final String NAME = "settings";
+
     public static class Keys {
         public static final String KEY_START_ON_BOOT = "start_on_boot";
         public static final String KEY_WATCHDOG = "watchdog";
@@ -48,8 +50,7 @@ public class ShizukuSettings {
         return sPreferences;
     }
 
-    @NonNull
-    private static Context getSettingsStorageContext(@NonNull Context context) {
+    @NonNull private static Context getSettingsStorageContext(@NonNull Context context) {
         Context storageContext;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             storageContext = context.createDeviceProtectedStorageContext();
@@ -74,8 +75,7 @@ public class ShizukuSettings {
 
     public static void initialize(Context context) {
         if (sPreferences == null) {
-            sPreferences = getSettingsStorageContext(context)
-                .getSharedPreferences(NAME, Context.MODE_PRIVATE);
+            sPreferences = getSettingsStorageContext(context).getSharedPreferences(NAME, Context.MODE_PRIVATE);
         }
     }
 
@@ -119,21 +119,25 @@ public class ShizukuSettings {
     }
 
     public static boolean getStartOnBoot(Context context) {
-        ComponentName bootCompleteReceiver = new ComponentName(context.getPackageName(), BootCompleteReceiver.class.getName());
+        ComponentName bootCompleteReceiver =
+                new ComponentName(context.getPackageName(), BootCompleteReceiver.class.getName());
         int state = context.getPackageManager().getComponentEnabledSetting(bootCompleteReceiver);
         return state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
     }
 
     public static void setStartOnBoot(Context context, boolean enable) {
-        ComponentName bootCompleteReceiver = new ComponentName(context.getPackageName(), BootCompleteReceiver.class.getName());
-        context.getPackageManager().setComponentEnabledSetting(
-            bootCompleteReceiver,
-            enable ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-            PackageManager.DONT_KILL_APP
-        );
+        ComponentName bootCompleteReceiver =
+                new ComponentName(context.getPackageName(), BootCompleteReceiver.class.getName());
+        context.getPackageManager()
+                .setComponentEnabledSetting(
+                        bootCompleteReceiver,
+                        enable
+                                ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                                : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        PackageManager.DONT_KILL_APP);
         getPreferences().edit().putBoolean(Keys.KEY_START_ON_BOOT, enable).apply();
     }
-    
+
     public static boolean getWatchdog() {
         return getPreferences().getBoolean(Keys.KEY_WATCHDOG, false);
     }
@@ -170,11 +174,13 @@ public class ShizukuSettings {
 
     public static void setTcpPort(@Nullable Integer port) {
         if (port != null) {
-            getPreferences().edit().putString(Keys.KEY_TCP_PORT, Integer.toString(port)).apply();
+            getPreferences()
+                    .edit()
+                    .putString(Keys.KEY_TCP_PORT, Integer.toString(port))
+                    .apply();
         } else {
             getPreferences().edit().remove(Keys.KEY_TCP_PORT).apply();
         }
-        
     }
 
     public static boolean getLegacyPairing() {

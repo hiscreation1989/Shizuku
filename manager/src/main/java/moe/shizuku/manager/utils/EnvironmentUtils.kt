@@ -1,45 +1,40 @@
 package moe.shizuku.manager.utils
 
 import android.app.UiModeManager
-import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.SystemProperties
+import com.topjohnwu.superuser.Shell
 import moe.shizuku.manager.ShizukuApplication
 import moe.shizuku.manager.ShizukuSettings
-import com.topjohnwu.superuser.Shell
 
 private val appContext = ShizukuApplication.appContext
 
 object EnvironmentUtils {
 
     @JvmStatic
-    fun isWatch(): Boolean {
-        return (appContext.getSystemService(UiModeManager::class.java).currentModeType
-                == Configuration.UI_MODE_TYPE_WATCH)
-    }
+    fun isWatch(): Boolean = (
+        appContext.getSystemService(UiModeManager::class.java).currentModeType
+            == Configuration.UI_MODE_TYPE_WATCH
+        )
 
     @JvmStatic
-    fun isTelevision(): Boolean {
-        return (appContext.getSystemService(UiModeManager::class.java).currentModeType
-                == Configuration.UI_MODE_TYPE_TELEVISION ||
-                appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK))
+    fun isTelevision(): Boolean = (
+        appContext.getSystemService(UiModeManager::class.java).currentModeType
+            == Configuration.UI_MODE_TYPE_TELEVISION ||
+            appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+        )
+
+    fun isTlsSupported(): Boolean = if (isTelevision()) {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    } else {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
     }
 
-    fun isTlsSupported(): Boolean {
-        return if (isTelevision())
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-            else Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-    }
+    fun isWifiRequired(): Boolean = (getAdbTcpPort() <= 0 || !ShizukuSettings.getTcpMode())
 
-    fun isWifiRequired(): Boolean {
-        return (getAdbTcpPort() <= 0 || !ShizukuSettings.getTcpMode())
-    }
-
-    fun isRooted(): Boolean {
-        return Shell.getShell().isRoot
-    }
+    fun isRooted(): Boolean = Shell.getShell().isRoot
 
     fun getAdbTcpPort(): Int {
         var port = SystemProperties.getInt("service.adb.tcp.port", -1)

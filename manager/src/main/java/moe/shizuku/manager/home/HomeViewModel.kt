@@ -3,7 +3,6 @@ package moe.shizuku.manager.home
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.pm.PermissionInfo
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -33,7 +32,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _shouldShowBatteryOptimizationSnackbar = MutableLiveData<Boolean>(false)
     val shouldShowBatteryOptimizationSnackbar: LiveData<Boolean> = _shouldShowBatteryOptimizationSnackbar
 
-
     private fun load(): ServiceStatus {
         if (!ShizukuStateMachine.isRunning()) {
             return ServiceStatus()
@@ -49,7 +47,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 LOGGER.w(tr, "getSELinuxContext")
                 null
             }
-        } else null
+        } else {
+            null
+        }
         val permissionTest =
             Shizuku.checkRemotePermission("android.permission.GRANT_RUNTIME_PERMISSIONS") == PackageManager.PERMISSION_GRANTED
 
@@ -65,7 +65,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val status = load()
                 _serviceStatus.postValue(Resource.success(status))
             } catch (e: CancellationException) {
-
             } catch (e: Throwable) {
                 _serviceStatus.postValue(Resource.error(e, ServiceStatus()))
             }
@@ -76,8 +75,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         if (EnvironmentUtils.isTelevision()) return
         if (!ShizukuSettings.getStartOnBoot(appContext) && !ShizukuSettings.getWatchdog()) return
         _shouldShowBatteryOptimizationSnackbar.postValue(
-            !SettingsHelper.isIgnoringBatteryOptimizations(appContext)
+            !SettingsHelper.isIgnoringBatteryOptimizations(appContext),
         )
     }
-
 }

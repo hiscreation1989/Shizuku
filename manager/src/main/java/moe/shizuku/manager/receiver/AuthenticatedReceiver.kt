@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import moe.shizuku.manager.MainActivity
 import moe.shizuku.manager.R
@@ -26,12 +27,12 @@ abstract class AuthenticatedReceiver : BroadcastReceiver() {
         if (authToken.isNullOrEmpty()) {
             context.notify(
                 R.string.notification_auth_missing_title,
-                R.string.notification_auth_missing_message
+                R.string.notification_auth_missing_message,
             )
         } else if (authToken != expectedToken) {
             context.notify(
                 R.string.notification_auth_invalid_title,
-                R.string.notification_auth_invalid_message
+                R.string.notification_auth_invalid_message,
             )
         } else {
             onAuthenticated(context, intent)
@@ -42,24 +43,28 @@ abstract class AuthenticatedReceiver : BroadcastReceiver() {
         val titleStr = getString(title)
         val messageStr = getString(message)
 
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_HIGH
-        )
-
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH,
+            )
+            nm.createNotificationChannel(channel)
+        }
 
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK or 
-                Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                Intent.FLAG_ACTIVITY_SINGLE_TOP
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP,
             )
         }
         val launchPendingIntent = PendingIntent.getActivity(
-            this, 0, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            this,
+            0,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)

@@ -14,25 +14,26 @@ import javax.net.ssl.SSLSocket
 
 private const val TAG = "AdbPairClient"
 
-private const val kCurrentKeyHeaderVersion = 1.toByte()
-private const val kMinSupportedKeyHeaderVersion = 1.toByte()
-private const val kMaxSupportedKeyHeaderVersion = 1.toByte()
-private const val kMaxPeerInfoSize = 8192
-private const val kMaxPayloadSize = kMaxPeerInfoSize * 2
+private const val CURRENT_KEY_HEADER_VERSION = 1.toByte()
+private const val MIN_SUPPORTED_KEY_HEADER_VERSION = 1.toByte()
+private const val MAX_SUPPORTED_KEY_HEADER_VERSION = 1.toByte()
+private const val MAX_PEER_INFO_SIZE = 8192
+private const val MAX_PAYLOAD_SIZE = MAX_PEER_INFO_SIZE * 2
 
-private const val kExportedKeyLabel = "adb-label\u0000"
-private const val kExportedKeySize = 64
+private const val EXPORTED_KEY_LABEL = "adb-label\u0000"
+private const val EXPORTED_KEY_SIZE = 64
 
-private const val kPairingPacketHeaderSize = 6
+private const val PAIRING_PACKET_HEADER_SIZE = 6
 
 private class PeerInfo(
-        val type: Byte,
-        data: ByteArray) {
+    val type: Byte,
+    data: ByteArray,
+) {
 
-    val data = ByteArray(kMaxPeerInfoSize - 1)
+    val data = ByteArray(MAX_PEER_INFO_SIZE - 1)
 
     init {
-        data.copyInto(this.data, 0, 0, data.size.coerceAtMost(kMaxPeerInfoSize - 1))
+        data.copyInto(this.data, 0, 0, data.size.coerceAtMost(MAX_PEER_INFO_SIZE - 1))
     }
 
     enum class Type(val value: Byte) {
@@ -49,19 +50,15 @@ private class PeerInfo(
         Log.d(TAG, "write PeerInfo ${toStringShort()}")
     }
 
-    override fun toString(): String {
-        return "PeerInfo(${toStringShort()})"
-    }
+    override fun toString(): String = "PeerInfo(${toStringShort()})"
 
-    fun toStringShort(): String {
-        return "type=$type, data=${data.contentToString()}"
-    }
+    fun toStringShort(): String = "type=$type, data=${data.contentToString()}"
 
     companion object {
 
         fun readFrom(buffer: ByteBuffer): PeerInfo {
             val type = buffer.get()
-            val data = ByteArray(kMaxPeerInfoSize - 1)
+            val data = ByteArray(MAX_PEER_INFO_SIZE - 1)
             buffer.get(data)
             return PeerInfo(type, data)
         }
@@ -69,13 +66,14 @@ private class PeerInfo(
 }
 
 private class PairingPacketHeader(
-        val version: Byte,
-        val type: Byte,
-        val payload: Int) {
+    val version: Byte,
+    val type: Byte,
+    val payload: Int,
+) {
 
     enum class Type(val value: Byte) {
         SPAKE2_MSG(0.toByte()),
-        PEER_INFO(1.toByte())
+        PEER_INFO(1.toByte()),
     }
 
     fun writeTo(buffer: ByteBuffer) {
@@ -88,13 +86,9 @@ private class PairingPacketHeader(
         Log.d(TAG, "write PairingPacketHeader ${toStringShort()}")
     }
 
-    override fun toString(): String {
-        return "PairingPacketHeader(${toStringShort()})"
-    }
+    override fun toString(): String = "PairingPacketHeader(${toStringShort()})"
 
-    fun toStringShort(): String {
-        return "version=${version.toInt()}, type=${type.toInt()}, payload=$payload"
-    }
+    fun toStringShort(): String = "version=${version.toInt()}, type=${type.toInt()}, payload=$payload"
 
     companion object {
 
@@ -103,16 +97,16 @@ private class PairingPacketHeader(
             val type = buffer.get()
             val payload = buffer.int
 
-            if (version < kMinSupportedKeyHeaderVersion || version > kMaxSupportedKeyHeaderVersion) {
-                Log.e(TAG, "PairingPacketHeader version mismatch (us=$kCurrentKeyHeaderVersion them=${version})")
+            if (version < MIN_SUPPORTED_KEY_HEADER_VERSION || version > MAX_SUPPORTED_KEY_HEADER_VERSION) {
+                Log.e(TAG, "PairingPacketHeader version mismatch (us=$CURRENT_KEY_HEADER_VERSION them=$version)")
                 return null
             }
             if (type != Type.SPAKE2_MSG.value && type != Type.PEER_INFO.value) {
-                Log.e(TAG, "Unknown PairingPacket type=${type}")
+                Log.e(TAG, "Unknown PairingPacket type=$type")
                 return null
             }
-            if (payload <= 0 || payload > kMaxPayloadSize) {
-                Log.e(TAG, "header payload not within a safe payload size (size=${payload})")
+            if (payload <= 0 || payload > MAX_PAYLOAD_SIZE) {
+                Log.e(TAG, "header payload not within a safe payload size (size=$payload)")
                 return null
             }
 
@@ -168,7 +162,7 @@ class AdbPairingClient(private val host: String, private val port: Int, private 
         Ready,
         ExchangingMsgs,
         ExchangingPeerInfo,
-        Stopped
+        Stopped,
     }
 
     private lateinit var socket: Socket
@@ -213,7 +207,7 @@ class AdbPairingClient(private val host: String, private val port: Int, private 
         outputStream = DataOutputStream(sslSocket.outputStream)
 
         val pairCodeBytes = pairCode.toByteArray()
-        val keyMaterial = Conscrypt.exportKeyingMaterial(sslSocket, kExportedKeyLabel, null, kExportedKeySize)
+        val keyMaterial = Conscrypt.exportKeyingMaterial(sslSocket, EXPORTED_KEY_LABEL, null, EXPORTED_KEY_SIZE)
         val passwordBytes = ByteArray(pairCode.length + keyMaterial.size)
         pairCodeBytes.copyInto(passwordBytes)
         keyMaterial.copyInto(passwordBytes, pairCodeBytes.size)
@@ -223,19 +217,17 @@ class AdbPairingClient(private val host: String, private val port: Int, private 
         this.pairingContext = pairingContext
     }
 
-    private fun createHeader(type: PairingPacketHeader.Type, payloadSize: Int): PairingPacketHeader {
-        return PairingPacketHeader(kCurrentKeyHeaderVersion, type.value, payloadSize)
-    }
+    private fun createHeader(type: PairingPacketHeader.Type, payloadSize: Int): PairingPacketHeader = PairingPacketHeader(CURRENT_KEY_HEADER_VERSION, type.value, payloadSize)
 
     private fun readHeader(): PairingPacketHeader? {
-        val bytes = ByteArray(kPairingPacketHeaderSize)
+        val bytes = ByteArray(PAIRING_PACKET_HEADER_SIZE)
         inputStream.readFully(bytes)
         val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN)
         return PairingPacketHeader.readFrom(buffer)
     }
 
     private fun writeHeader(header: PairingPacketHeader, payload: ByteArray) {
-        val buffer = ByteBuffer.allocate(kPairingPacketHeaderSize).order(ByteOrder.BIG_ENDIAN)
+        val buffer = ByteBuffer.allocate(PAIRING_PACKET_HEADER_SIZE).order(ByteOrder.BIG_ENDIAN)
         header.writeTo(buffer)
 
         outputStream.write(buffer.array())
@@ -261,7 +253,7 @@ class AdbPairingClient(private val host: String, private val port: Int, private 
     }
 
     private fun doExchangePeerInfo(): Boolean {
-        val buf = ByteBuffer.allocate(kMaxPeerInfoSize).order(ByteOrder.BIG_ENDIAN)
+        val buf = ByteBuffer.allocate(MAX_PEER_INFO_SIZE).order(ByteOrder.BIG_ENDIAN)
         peerInfo.writeTo(buf)
 
         val outbuf = pairingContext.encrypt(buf.array()) ?: return false
@@ -276,8 +268,8 @@ class AdbPairingClient(private val host: String, private val port: Int, private 
         inputStream.readFully(theirMessage)
 
         val decrypted = pairingContext.decrypt(theirMessage) ?: throw AdbInvalidPairingCodeException()
-        if (decrypted.size != kMaxPeerInfoSize) {
-            Log.e(TAG, "Got size=${decrypted.size} PeerInfo.size=$kMaxPeerInfoSize")
+        if (decrypted.size != MAX_PEER_INFO_SIZE) {
+            Log.e(TAG, "Got size=${decrypted.size} PeerInfo.size=$MAX_PEER_INFO_SIZE")
             return false
         }
         val theirPeerInfo = PeerInfo.readFrom(ByteBuffer.wrap(decrypted))

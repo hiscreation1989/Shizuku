@@ -10,12 +10,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.topjohnwu.superuser.Shell
-import moe.shizuku.manager.R
 import moe.shizuku.manager.AppConstants
+import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ShizukuSettings.LaunchMethod
 import moe.shizuku.manager.starter.Starter
@@ -34,7 +33,7 @@ object ShizukuReceiverStarter {
         AWAITING_WIFI,
         AWAITING_RETRY,
         RUNNING,
-        STOPPED
+        STOPPED,
     }
 
     fun start(context: Context, forceStart: Boolean = false) {
@@ -42,50 +41,65 @@ object ShizukuReceiverStarter {
 
         if (ShizukuSettings.getLastLaunchMode() == LaunchMethod.ROOT) {
             rootStart(context)
-        } else if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || EnvironmentUtils.isTelevision() || EnvironmentUtils.getAdbTcpPort() > 0)
-            && ShizukuSettings.getLastLaunchMode() == LaunchMethod.ADB) {
-                if (context.checkSelfPermission(WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED) {
-                    AdbStartWorker.enqueue(context)
-                    updateNotification(context, WorkerState.AWAITING_WIFI)
-                } else {
-                    showPermissionErrorNotification(context)
-                }
+        } else if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || EnvironmentUtils.isTelevision() || EnvironmentUtils.getAdbTcpPort() > 0) &&
+            ShizukuSettings.getLastLaunchMode() == LaunchMethod.ADB
+        ) {
+            if (context.checkSelfPermission(WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED) {
+                AdbStartWorker.enqueue(context)
+                updateNotification(context, WorkerState.AWAITING_WIFI)
+            } else {
+                showPermissionErrorNotification(context)
+            }
         } else {
             Log.w(AppConstants.TAG, "Background start not supported")
         }
     }
 
     fun buildNotification(context: Context, msg: String? = null): Notification {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.wadb_notification_title),
-            NotificationManager.IMPORTANCE_LOW
-        )
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                context.getString(R.string.wadb_notification_title),
+                NotificationManager.IMPORTANCE_LOW,
+            )
+            nm.createNotificationChannel(channel)
+        }
 
         val cancelIntent = Intent(context, NotifCancelReceiver::class.java)
         val cancelPendingIntent = PendingIntent.getBroadcast(
-            context, 0, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            context,
+            0,
+            cancelIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val attemptNowIntent = Intent(context, NotifAttemptReceiver::class.java)
         val attemptNowPendingIntent = PendingIntent.getBroadcast(
-            context, 0, attemptNowIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            context,
+            0,
+            attemptNowIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val restoreIntent = Intent(context, NotifRestoreReceiver::class.java)
         val restorePendingIntent = PendingIntent.getBroadcast(
-            context, 0, restoreIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            context,
+            0,
+            restoreIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val wifiIntent = SettingsPage.InternetPanel.buildIntent(context)
         val wifiPendingIntent = PendingIntent.getActivity(
-            context, 0, wifiIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            context,
+            0,
+            wifiIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val nb = NotificationCompat.Builder(context, CHANNEL_ID)
-        
+
         if (msg != null) nb.setContentText(msg)
 
         return nb
@@ -114,7 +128,7 @@ object ShizukuReceiverStarter {
 
     private fun rootStart(context: Context) {
         if (!Shell.getShell().isRoot) {
-            //NotificationHelper.notify(context, AppConstants.NOTIFICATION_ID_STATUS, AppConstants.NOTIFICATION_CHANNEL_STATUS, R.string.notification_service_start_no_root)
+            // NotificationHelper.notify(context, AppConstants.NOTIFICATION_ID_STATUS, AppConstants.NOTIFICATION_CHANNEL_STATUS, R.string.notification_service_start_no_root)
             Shell.getCachedShell()?.close()
             return
         }
@@ -129,18 +143,22 @@ object ShizukuReceiverStarter {
     }
 
     private fun showPermissionErrorNotification(context: Context) {
-
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.wadb_notification_title),
-            NotificationManager.IMPORTANCE_LOW
-        )
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                context.getString(R.string.wadb_notification_title),
+                NotificationManager.IMPORTANCE_LOW,
+            )
+            nm.createNotificationChannel(channel)
+        }
 
         val webpageIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/thedjchi/Shizuku/wiki#shizuku-isnt-starting-on-boot-for-me"))
         val pendingWebpageIntent = PendingIntent.getActivity(
-            context, 0, webpageIntent, PendingIntent.FLAG_IMMUTABLE
+            context,
+            0,
+            webpageIntent,
+            PendingIntent.FLAG_IMMUTABLE,
         )
 
         val msg = context.getString(R.string.wadb_permission_error_notification_content)

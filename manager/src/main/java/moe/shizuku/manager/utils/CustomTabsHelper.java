@@ -5,11 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
-
 import androidx.browser.customtabs.CustomTabsIntent;
-
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-
 import moe.shizuku.manager.R;
 import rikka.core.util.ClipboardUtils;
 import rikka.html.text.HtmlCompat;
@@ -17,7 +14,6 @@ import rikka.html.text.HtmlCompat;
 /**
  * Created by fytho on 2017/12/15.
  */
-
 public class CustomTabsHelper {
 
     public interface OnCreateIntentBuilderListener {
@@ -77,10 +73,10 @@ public class CustomTabsHelper {
                     ClipboardUtils.put(context, url);
 
                     new MaterialAlertDialogBuilder(context)
-                        .setTitle(R.string.dialog_cannot_open_browser_title)
-                        .setMessage(HtmlCompat.fromHtml(context.getString(R.string.toast_copied_to_clipboard)))
-                        .setPositiveButton(android.R.string.ok, null)
-                        .show();
+                            .setTitle(R.string.dialog_cannot_open_browser_title)
+                            .setMessage(HtmlCompat.fromHtml(context.getString(R.string.toast_copied_to_clipboard)))
+                            .setPositiveButton(android.R.string.ok, null)
+                            .show();
                 } catch (Throwable ignored) {
                 }
             }

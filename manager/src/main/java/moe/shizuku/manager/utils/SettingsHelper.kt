@@ -3,10 +3,9 @@ package moe.shizuku.manager.utils
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.activity.result.ActivityResultLauncher
 import android.os.PowerManager
 import android.provider.Settings
-import moe.shizuku.manager.utils.SettingsPage
+import androidx.activity.result.ActivityResultLauncher
 
 object SettingsHelper {
 
@@ -14,7 +13,9 @@ object SettingsHelper {
         val adbEnabled = Settings.Global.getInt(context.contentResolver, Settings.Global.ADB_ENABLED, 0)
         if (adbEnabled > 0) {
             SettingsPage.Developer.WirelessDebugging.launch(context)
-        } else SettingsPage.Developer.HighlightWirelessDebugging.launch(context)
+        } else {
+            SettingsPage.Developer.HighlightWirelessDebugging.launch(context)
+        }
     }
 
     fun isIgnoringBatteryOptimizations(context: Context): Boolean {
@@ -32,5 +33,4 @@ object SettingsHelper {
             context.startActivity(intent)
         }
     }
-
 }

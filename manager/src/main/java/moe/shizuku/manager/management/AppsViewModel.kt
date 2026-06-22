@@ -1,11 +1,7 @@
 package moe.shizuku.manager.management
 
 import android.app.Application
-import android.content.Context
 import android.content.pm.PackageInfo
-import androidx.activity.ComponentActivity
-import androidx.annotation.MainThread
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -38,12 +34,10 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
                 if (!onlyCount) _packages.postValue(Resource.success(list))
                 _grantedCount.postValue(Resource.success(count))
             } catch (e: CancellationException) {
-
             } catch (e: Throwable) {
                 _packages.postValue(Resource.error(e, null))
                 _grantedCount.postValue(Resource.error(e, 0))
             }
         }
     }
-    
 }

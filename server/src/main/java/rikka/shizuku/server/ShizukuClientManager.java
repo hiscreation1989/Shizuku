@@ -6,5 +6,3 @@ public class ShizukuClientManager extends ClientManager<ShizukuConfigManager> {
         super(configManager);
     }
 }
-
-

@@ -1,16 +1,13 @@
 package moe.shizuku.starter;
 
 import android.content.IContentProvider;
-import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
 import android.util.Pair;
-
 import java.util.Locale;
-
 import moe.shizuku.api.BinderContainer;
 import moe.shizuku.starter.util.IContentProviderCompat;
 import rikka.hidden.compat.ActivityManagerApis;
@@ -25,39 +22,62 @@ public class ServiceStarter {
 
     public static final String DEBUG_ARGS;
 
+    @SuppressWarnings("deprecation")
+    private static BinderContainer getBinderContainer(Bundle bundle) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return bundle.getParcelable(EXTRA_BINDER, BinderContainer.class);
+        }
+        return bundle.getParcelable(EXTRA_BINDER);
+    }
+
     static {
         int sdk = Build.VERSION.SDK_INT;
         if (sdk >= 30) {
-            DEBUG_ARGS = "-Xcompiler-option" + " --debuggable" +
-                    " -XjdwpProvider:adbconnection" +
-                    " -XjdwpOptions:suspend=n,server=y";
+            DEBUG_ARGS = "-Xcompiler-option" + " --debuggable" + " -XjdwpProvider:adbconnection"
+                    + " -XjdwpOptions:suspend=n,server=y";
         } else if (sdk >= 28) {
-            DEBUG_ARGS = "-Xcompiler-option" + " --debuggable" +
-                    " -XjdwpProvider:internal" +
-                    " -XjdwpOptions:transport=dt_android_adb,suspend=n,server=y";
+            DEBUG_ARGS = "-Xcompiler-option" + " --debuggable" + " -XjdwpProvider:internal"
+                    + " -XjdwpOptions:transport=dt_android_adb,suspend=n,server=y";
         } else {
-            DEBUG_ARGS = "-Xcompiler-option" + " --debuggable" +
-                    " -agentlib:jdwp=transport=dt_android_adb,suspend=n,server=y";
+            DEBUG_ARGS = "-Xcompiler-option" + " --debuggable"
+                    + " -agentlib:jdwp=transport=dt_android_adb,suspend=n,server=y";
         }
     }
 
-    private static final String USER_SERVICE_CMD_FORMAT = "(CLASSPATH='%s' %s%s /system/bin " +
-            "--nice-name='%s' moe.shizuku.starter.ServiceStarter " +
-            "--token='%s' --package='%s' --class='%s' --uid=%d%s)&";
+    private static final String USER_SERVICE_CMD_FORMAT =
+            "(CLASSPATH='%s' %s%s /system/bin " + "--nice-name='%s' moe.shizuku.starter.ServiceStarter "
+                    + "--token='%s' --package='%s' --class='%s' --uid=%d%s)&";
 
     // DeathRecipient will automatically be unlinked when all references to the
     // binder is dropped, so we hold the reference here.
     @SuppressWarnings("FieldCanBeLocal")
     private static IBinder shizukuBinder;
 
-    public static String commandForUserService(String appProcess, String managerApkPath, String token, String packageName, String classname, String processNameSuffix, int callingUid, boolean debug) {
+    public static String commandForUserService(
+            String appProcess,
+            String managerApkPath,
+            String token,
+            String packageName,
+            String classname,
+            String processNameSuffix,
+            int callingUid,
+            boolean debug) {
         String processName = String.format("%s:%s", packageName, processNameSuffix);
-        return String.format(Locale.ENGLISH, USER_SERVICE_CMD_FORMAT,
-                managerApkPath, appProcess, debug ? (" " + DEBUG_ARGS) : "",
+        return String.format(
+                Locale.ENGLISH,
+                USER_SERVICE_CMD_FORMAT,
+                managerApkPath,
+                appProcess,
+                debug ? (" " + DEBUG_ARGS) : "",
                 processName,
-                token, packageName, classname, callingUid, debug ? (" " + "--debug-name=" + processName) : "");
+                token,
+                packageName,
+                classname,
+                callingUid,
+                debug ? (" " + "--debug-name=" + processName) : "");
     }
 
+    @SuppressWarnings("deprecation")
     public static void main(String[] args) {
         if (Looper.getMainLooper() == null) {
             Looper.prepareMainLooper();
@@ -131,14 +151,16 @@ public class ServiceStarter {
                 reply.setClassLoader(BinderContainer.class.getClassLoader());
 
                 Log.i(TAG, String.format("send binder to %s in user %d", packageName, userId));
-                BinderContainer container = reply.getParcelable(EXTRA_BINDER);
+                BinderContainer container = getBinderContainer(reply);
 
                 if (container != null && container.binder != null && container.binder.pingBinder()) {
                     shizukuBinder = container.binder;
-                    shizukuBinder.linkToDeath(() -> {
-                        Log.i(TAG, "exiting...");
-                        System.exit(0);
-                    }, 0);
+                    shizukuBinder.linkToDeath(
+                            () -> {
+                                Log.i(TAG, "exiting...");
+                                System.exit(0);
+                            },
+                            0);
                     return true;
                 } else {
                     Log.w(TAG, "server binder not received");

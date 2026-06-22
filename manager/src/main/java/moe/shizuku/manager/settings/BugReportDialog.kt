@@ -15,8 +15,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.R
 import moe.shizuku.manager.databinding.BugReportDialogBinding
-import moe.shizuku.manager.ktx.asLink
 import moe.shizuku.manager.ktx.applyTemplateArgs
+import moe.shizuku.manager.ktx.asLink
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.worker.AdbStartWorker
 
@@ -59,11 +59,14 @@ class BugReportDialog : DialogFragment() {
                     Shizuku Version: ${BuildConfig.VERSION_NAME}
                 """.trimIndent()
 
-                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(
-                    "mailto:" + context.getString(R.string.support_email) + 
-                    "?subject=" + Uri.encode("[ISSUE TITLE]") +
-                    "&body=" + Uri.encode(plainBody)
-                ))
+                val intent = Intent(
+                    Intent.ACTION_SENDTO,
+                    Uri.parse(
+                        "mailto:" + context.getString(R.string.support_email) +
+                            "?subject=" + Uri.encode("[ISSUE TITLE]") +
+                            "&body=" + Uri.encode(plainBody),
+                    ),
+                )
                 try {
                     context.startActivity(intent)
                     dismiss()
@@ -87,5 +90,4 @@ class BugReportDialog : DialogFragment() {
         super.onDismiss(dialog)
         if (activity is BugReportDialogActivity) activity?.finish()
     }
-
 }

@@ -16,8 +16,7 @@ import rikka.recyclerview.BaseViewHolder.Creator
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants
 
-class ServerStatusViewHolder(private val binding: HomeServerStatusBinding, root: View) :
-    BaseViewHolder<ServiceStatus>(root) {
+class ServerStatusViewHolder(private val binding: HomeServerStatusBinding, root: View) : BaseViewHolder<ServiceStatus>(root) {
 
     companion object {
         val CREATOR = Creator<ServiceStatus> { inflater: LayoutInflater, parent: ViewGroup? ->
@@ -52,12 +51,13 @@ class ServerStatusViewHolder(private val binding: HomeServerStatusBinding, root:
         val summary = if (ok) {
             if (apiVersion != Shizuku.getLatestServiceVersion() || status.patchVersion != ShizukuApiConstants.SERVER_PATCH_VERSION) {
                 context.getString(
-                    R.string.home_status_service_version_update, user,
-                    "${apiVersion}.${patchVersion}",
-                    "${Shizuku.getLatestServiceVersion()}.${ShizukuApiConstants.SERVER_PATCH_VERSION}"
+                    R.string.home_status_service_version_update,
+                    user,
+                    "$apiVersion.$patchVersion",
+                    "${Shizuku.getLatestServiceVersion()}.${ShizukuApiConstants.SERVER_PATCH_VERSION}",
                 )
             } else {
-                context.getString(R.string.home_status_service_version, user, "${apiVersion}.${patchVersion}")
+                context.getString(R.string.home_status_service_version, user, "$apiVersion.$patchVersion")
             }
         } else {
             ""
