@@ -129,6 +129,7 @@ dependencies {
     implementation libs.kotlinx.coroutines.android
 
     implementation project(":server")
+    implementation project(":common")
     implementation project(":rish")
     implementation project(":starter")
     implementation project(":api")

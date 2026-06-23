@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import kotlin.collections.ArraysKt;
+import rikka.shizuku.common.util.InstalledPackagesCompat;
 import rikka.hidden.compat.PackageManagerApis;
 import rikka.hidden.compat.PermissionManagerApis;
 import rikka.hidden.compat.UserManagerApis;
@@ -144,7 +145,7 @@ public class ShizukuConfigManager extends ConfigManager {
 
         for (int userId : UserManagerApis.getUserIdsNoThrow()) {
             for (PackageInfo pi :
-                    PackageManagerApis.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
+                    InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
                 if (pi == null
                         || pi.applicationInfo == null
                         || pi.requestedPermissions == null

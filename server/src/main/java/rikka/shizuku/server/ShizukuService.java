@@ -41,6 +41,7 @@ import moe.shizuku.api.BinderContainer;
 import moe.shizuku.common.util.BuildUtils;
 import moe.shizuku.common.util.OsUtils;
 import moe.shizuku.server.IShizukuApplication;
+import rikka.shizuku.common.util.InstalledPackagesCompat;
 import rikka.hidden.compat.ActivityManagerApis;
 import rikka.hidden.compat.DeviceIdleControllerApis;
 import rikka.hidden.compat.PackageManagerApis;
@@ -467,7 +468,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         for (int user : users) {
-            for (PackageInfo pi : PackageManagerApis.getInstalledPackagesNoThrow(
+            for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(
                     PackageManager.GET_META_DATA | PackageManager.GET_PERMISSIONS, user)) {
                 if (Objects.equals(MANAGER_APPLICATION_ID, pi.packageName)) continue;
                 if (pi.applicationInfo == null) continue;
@@ -516,7 +517,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     private static void sendBinderToClient(Binder binder, int userId) {
         try {
             Stream<PackageInfo> packages =
-                    PackageManagerApis.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId).stream()
+                    InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId).stream()
                             .filter(pi -> pi != null && pi.requestedPermissions != null)
                             .filter(pi -> ArraysKt.contains(pi.requestedPermissions, PERMISSION));
 
